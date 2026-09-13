@@ -3747,6 +3747,16 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
   transform: none !important;
 }
 </style>
+
+<style id="ditemps-legal-pages-css">
+.ditemps-legal-modal{display:none;position:fixed;inset:0;z-index:10000000;align-items:center;justify-content:center;padding:18px}
+.ditemps-legal-modal.active{display:flex}
+.ditemps-legal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.58);backdrop-filter:blur(5px)}
+.ditemps-legal-card{position:relative;width:min(760px,100%);max-height:88vh;overflow:auto;background:#fff;color:#171717;border-radius:22px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.25);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.ditemps-legal-card h2{font-family:Georgia,serif;font-size:32px;margin:0 42px 18px 0}
+.ditemps-legal-card h3{font-size:17px;margin:22px 0 8px}.ditemps-legal-card p,.ditemps-legal-card li{font-size:14px;line-height:1.7;color:#555}.ditemps-legal-card ul{padding-left:20px}.ditemps-legal-close{position:absolute;right:14px;top:12px;border:0;background:#f3f3f3;border-radius:50%;width:38px;height:38px;font-size:25px;cursor:pointer}
+@media(max-width:600px){.ditemps-legal-card{padding:22px 18px;border-radius:18px;max-height:92vh}.ditemps-legal-card h2{font-size:27px}.ditemps-legal-card p,.ditemps-legal-card li{font-size:13px}}
+</style>
 </head>
 <body>
 
@@ -3830,7 +3840,15 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
 
       <section class="dl-final"><h2>Create something beautiful for someone you love.</h2><p>Made with ❤️ in India</p><button class="dl-cta" onclick="enterDitempsApp()">Enter Ditemps</button></section>
     </main>
-    <footer class="dl-footer"><div class="dl-wrap dl-footer-inner"><span>© 2026 Ditemps. All rights reserved.</span><span><a href="#">Terms of Service</a><a href="#">Privacy Policy</a><a href="#">Contact Us</a></span></div></footer>
+    <footer class="dl-footer"><div class="dl-wrap dl-footer-inner"><span>© 2026 Ditemps. All rights reserved.</span><span><a href="javascript:void(0)" onclick="showDitempsTerms();return false;">Terms of Service</a><a href="javascript:void(0)" onclick="showDitempsPrivacy();return false;">Privacy Policy</a><a href="javascript:void(0)" onclick="contactDitempsSupport();return false;">Contact Us</a><a href="javascript:void(0)" onclick="showDitempsDmca();return false;">DMCA Policy</a></span></div></footer>
+    <div id="ditempsLegalModal" class="ditemps-legal-modal" aria-hidden="true">
+      <div class="ditemps-legal-backdrop" onclick="closeDitempsLegal()"></div>
+      <div class="ditemps-legal-card" role="dialog" aria-modal="true" aria-labelledby="ditempsLegalTitle">
+        <button type="button" class="ditemps-legal-close" onclick="closeDitempsLegal()" aria-label="Close">×</button>
+        <h2 id="ditempsLegalTitle">Ditemps</h2>
+        <div id="ditempsLegalContent"></div>
+      </div>
+    </div>
   </div>
 
 
@@ -3838,6 +3856,16 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
 (function(){
   document.body.classList.add('ditemps-landing-active');
   window.enterDitempsApp = function(){
+    // The landing page is the first screen, so the global preparation loader
+    // must never cover the main app when entering from the landing page.
+    var prepLoader = document.getElementById('sitePrepLoader');
+    if (prepLoader) {
+      prepLoader.classList.add('hidden');
+      prepLoader.setAttribute('aria-busy', 'false');
+    }
+    var prepDialog = document.getElementById('prepBackDialog');
+    if (prepDialog) prepDialog.classList.remove('active');
+
     // Leave landing mode first so the main app sections become visible again.
     document.body.classList.remove('ditemps-landing-active');
     var landing=document.getElementById('ditempsLandingPage');
@@ -4667,11 +4695,13 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
         </div>
 
         <div class="ditemps-settings-section">
-          <div class="ditemps-settings-title">SUPPORT</div>
+          <div class="ditemps-settings-title">SUPPORT &amp; LEGAL</div>
           <div class="ditemps-settings-card">
             <button class="ditemps-action-row" onclick="contactDitempsSupport()"><span>Contact support</span><span>›</span></button>
             <button class="ditemps-action-row" onclick="showDitempsPrivacy()"><span>Privacy policy</span><span>›</span></button>
-            <button class="ditemps-action-row" onclick="showDitempsTerms()"><span>About Us</span><span>›</span></button>
+            <button class="ditemps-action-row" onclick="showDitempsTerms()"><span>Terms of Service</span><span>›</span></button>
+            <button class="ditemps-action-row" onclick="showDitempsDmca()"><span>DMCA Policy</span><span>›</span></button>
+            <button class="ditemps-action-row" onclick="showDitempsAbout()"><span>About Us</span><span>›</span></button>
           </div>
         </div>
 
@@ -8761,16 +8791,69 @@ var qrcode = function() {
       loadDitempsSettingsToggles();
     }
 
+    const DITEMPS_SUPPORT_EMAIL = 'ditempsofficial@gmail.com';
+    const DITEMPS_SITE_URL = 'https://ditemps-eosin.vercel.app/';
+
+    window.openDitempsLegal = function(title, html) {
+      const modal=document.getElementById('ditempsLegalModal');
+      const titleEl=document.getElementById('ditempsLegalTitle');
+      const content=document.getElementById('ditempsLegalContent');
+      if(!modal || !content) return;
+      if(titleEl) titleEl.textContent=title;
+      content.innerHTML=html;
+      modal.classList.add('active');
+      modal.setAttribute('aria-hidden','false');
+    };
+
+    window.closeDitempsLegal = function() {
+      const modal=document.getElementById('ditempsLegalModal');
+      if(modal){ modal.classList.remove('active'); modal.setAttribute('aria-hidden','true'); }
+    };
+
     window.contactDitempsSupport = function () {
-      window.location.href = 'mailto:support@ditemps.com?subject=Ditemps%20Support';
+      window.location.href = 'mailto:' + DITEMPS_SUPPORT_EMAIL + '?subject=Ditemps%20Support';
     };
 
     window.showDitempsPrivacy = function () {
-      alert('Privacy Policy\\n\\nDitemps uses your account information only to provide login, profile, wishlist, orders, and gift features. We do not display your private account information publicly.');
+      openDitempsLegal('Privacy Policy', `
+        <p><strong>Last updated: September 13, 2026</strong></p>
+        <p>Ditemps respects your privacy. This policy explains how information is used when you use Ditemps.</p>
+        <h3>Information we may collect</h3>
+        <ul><li>Account information such as your name, email address and profile photo.</li><li>Wishlist, profile, order and wallet-related activity needed to provide the service.</li><li>Template or personalised content that you choose to create or submit.</li><li>Basic technical information needed for security and service operation.</li></ul>
+        <h3>How we use information</h3><p>We use information to provide login, profiles, templates, wishlist, orders, gift features, security and support.</p>
+        <h3>Sharing</h3><p>We do not sell your private account information. Service providers such as Firebase may process information needed to operate authentication and related features.</p>
+        <h3>Account deletion</h3><p>You can request help with account or data deletion by contacting <strong>${DITEMPS_SUPPORT_EMAIL}</strong>.</p>
+        <h3>Contact</h3><p>Email: <strong>${DITEMPS_SUPPORT_EMAIL}</strong></p>`);
     };
 
     window.showDitempsTerms = function () {
-      alert('Terms of Use\\n\\nBy using Ditemps, you agree to use the service lawfully and not misuse referrals, rewards, accounts, or payment features.');
+      openDitempsLegal('Terms of Service', `
+        <p><strong>Last updated: September 13, 2026</strong></p>
+        <p>By using Ditemps, you agree to use the service lawfully and responsibly.</p>
+        <h3>Service</h3><p>Ditemps provides digital templates and personalised digital experiences.</p>
+        <h3>Accounts</h3><p>You are responsible for activity under your account and for keeping your login information secure.</p>
+        <h3>Content and intellectual property</h3><p>Ditemps templates, branding and site materials belong to Ditemps or their respective rights holders. Do not copy, redistribute or misuse them. You remain responsible for content you upload or create.</p>
+        <h3>Payments and refunds</h3><p>Where payments or wallet features are offered, transactions must be used honestly. For an eligible refund request, Ditemps will verify the request and the team will review it before a refund is approved or declined. Providing false information may result in the request being rejected.</p>
+        <h3>Misuse</h3><p>Do not attempt to abuse referrals, rewards, payment systems, accounts, security controls or other users.</p>
+        <h3>Changes</h3><p>Ditemps may update features, availability or these terms when necessary.</p>
+        <h3>Contact</h3><p>Email: <strong>${DITEMPS_SUPPORT_EMAIL}</strong></p>`);
+    };
+
+    window.showDitempsDmca = function () {
+      openDitempsLegal('DMCA Policy', `
+        <p><strong>Last updated: September 13, 2026</strong></p>
+        <p>Ditemps respects copyright and will review valid notices concerning material hosted through the service.</p>
+        <h3>Copyright complaint</h3><p>Please email <strong>${DITEMPS_SUPPORT_EMAIL}</strong> with the copyrighted work, the material or page you believe infringes it, your contact information, a good-faith statement that the use is unauthorised, and a statement that the information in your notice is accurate.</p>
+        <h3>Review</h3><p>Ditemps may review the notice and take appropriate action where infringement is established or reasonably supported.</p>
+        <h3>Counter-notice</h3><p>If content was removed because of a copyright complaint and you believe the removal was mistaken, you may contact the same email with an explanation and supporting information for review.</p>
+        <h3>Contact</h3><p>DMCA email: <strong>${DITEMPS_SUPPORT_EMAIL}</strong></p>`);
+    };
+
+    window.showDitempsAbout = function () {
+      closeSettings();
+      if (typeof filterMenu === 'function') {
+        setTimeout(function(){ filterMenu('about'); window.scrollTo({top:0,behavior:'smooth'}); }, 120);
+      }
     };
 
     window.deleteDitempsAccount = async function () {
@@ -9664,23 +9747,6 @@ function confirmLogout() {
         listEl.innerHTML = '<div class="empty-note">Wallet purchases could not be loaded. Check Firestore rules.</div>';
       }
     };
-
-    // ============================================================
-    // # EXPOSE TO THE REST OF THE SITE #
-    // This block lives in a <script type="module">, and modules keep
-    // their own top-level scope — anything declared here (db, doc,
-    // getCurrentUser, etc.) is invisible to the site's other, older
-    // <script> tags even though they call these same names directly.
-    // Attaching them to window is what makes those calls resolve.
-    // ============================================================
-    Object.assign(window, {
-      auth, db, provider,
-      doc, collection, query, orderBy, where,
-      setDoc, addDoc, getDoc, getDocs, onSnapshot, runTransaction,
-      increment, arrayUnion, arrayRemove, serverTimestamp,
-      getCurrentUser, deleteUser, sendEmailVerification,
-      reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider
-    });
   </script>
 
 <script id="ditemps-header-landing-behavior">
