@@ -8852,9 +8852,9 @@ var qrcode = function() {
 
     function updateDitempsSettingsDetails(u, profileData) {
       const data = profileData || {};
-      const name = String(data.name || (u && u.displayName) || 'User').trim() || 'User';
+      const name = String(data.name || data.displayName || data.username || data.fullName || (u && u.displayName) || ((u && u.email) ? u.email.split('@')[0] : '') || 'User').trim() || 'User';
       const email = String(data.email || (u && u.email) || '—').trim() || '—';
-      const photoURL = String(data.photoURL || (u && u.photoURL) || '').trim();
+      const photoURL = String(data.photoURL || data.avatar || data.profilePhoto || (u && u.photoURL) || '').trim();
 
       const headName = document.getElementById('acctSettingsHeadName');
       const headEmail = document.getElementById('acctSettingsHeadEmail');
@@ -8877,7 +8877,7 @@ var qrcode = function() {
         topPhoto.src = avatarUrl;
       }
 
-      const city = String(data.city || '').trim();
+      const city = String(data.city || data.location || data.town || '').trim();
       const cityEl = document.getElementById('acctSettingsCity');
       if (cityEl) cityEl.textContent = city ? city + ' ›' : 'Add city ›';
 
@@ -8916,13 +8916,13 @@ var qrcode = function() {
         emailStatus.classList.toggle('not-connected', !isEmailAccount);
       }
 
-      const walletValue = Number(data.walletBalance != null ? data.walletBalance : (window.currentUserWallet || 0));
+      const walletValue = Number(data.walletBalance != null ? data.walletBalance : (data.balance != null ? data.balance : (data.coins != null ? data.coins : (window.currentUserWallet || 0))));
       const wallet = document.getElementById('acctSettingsWallet');
       if (wallet) wallet.textContent = '₹' + (window.isAdminUser ? '∞' : walletValue);
 
       const ref = document.getElementById('acctSettingsReferral');
       if (ref) {
-        ref.textContent = data.referralCode ? String(data.referralCode) :
+        ref.textContent = (data.referralCode || data.referral || data.refCode) ? String(data.referralCode || data.referral || data.refCode) :
           (window.currentUserUid ? String(window.currentUserUid).slice(-8).toUpperCase() : '—');
       }
 
@@ -8941,8 +8941,8 @@ var qrcode = function() {
         updateDitempsSettingsDetails(u, data);
 
         // Keep the authenticated user's visible name/photo in sync with Firestore.
-        const firestoreName = String(data.name || '').trim();
-        const firestorePhoto = String(data.photoURL || '').trim();
+        const firestoreName = String(data.name || data.displayName || data.username || data.fullName || '').trim();
+        const firestorePhoto = String(data.photoURL || data.avatar || data.profilePhoto || '').trim();
         const navName = document.getElementById('navUserName');
         const navPhoto = document.getElementById('navUserPhoto');
         if (navName) navName.textContent = firestoreName || (u && u.displayName) || 'Account';
@@ -8951,7 +8951,7 @@ var qrcode = function() {
           navPhoto.src = getAvatarUrl({displayName:firestoreName || (u && u.displayName) || 'User', email:(u && u.email) || '', photoURL:firestorePhoto || (u && u.photoURL) || ''});
         }
 
-        const wallet = Number(data.walletBalance || 0);
+        const wallet = Number(data.walletBalance != null ? data.walletBalance : (data.balance != null ? data.balance : (data.coins || 0)));
         const profileBal = document.getElementById('profileWalletBalance');
         if (profileBal) profileBal.textContent = window.isAdminUser ? '∞' : wallet;
         const acctBal = document.getElementById('acctSettingsWallet');
@@ -9151,8 +9151,16 @@ var qrcode = function() {
       pushOverlay('settings', hideSettings);
       const u = getCurrentUser();
       if (u) {
+        // Paint authenticated data immediately, then replace it with the real
+        // users/{uid} document as soon as Firestore returns it.
         updateDitempsSettingsDetails(u, {});
         listenToUserProfile(u.uid);
+        getDoc(doc(db, 'users', u.uid)).then(function(snap){
+          if (!snap.exists()) return;
+          updateDitempsSettingsDetails(u, snap.data() || {});
+        }).catch(function(err){
+          console.warn('Could not read Firestore profile:', err);
+        });
 
         const since = document.getElementById('acctSince');
         if (since) {
@@ -9613,11 +9621,14 @@ function confirmLogout() {
         if (userName) userName.textContent = user.displayName || 'Account';
         if (adminMenu) adminMenu.style.display = window.isAdminUser ? '' : 'none';
 
+        // Start reading the user's Firestore profile immediately. Do not wait for
+        // saveUserData(), because a write/rules error must never prevent profile reads.
+        listenToUserProfile(user.uid);
+        listenToWallet(user.uid);
+        loadCurrentUserWishlist();
+
         try {
           await saveUserData(user);
-          listenToWallet(user.uid);
-          listenToUserProfile(user.uid);
-          loadCurrentUserWishlist();
         } catch (err) {
           console.error('User data setup failed:', err);
         }
