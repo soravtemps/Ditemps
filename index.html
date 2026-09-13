@@ -1029,6 +1029,15 @@
   }
   .modal-overlay.active { display: flex; }
 
+  /* customizeModal + qrShapeModal must float above #settingsModal (My Gifts /
+     Wishlist / Settings screen) since both share the same base z-index and
+     can be opened while the account screen is already showing. Without this,
+     the QR generator window rendered underneath the account page. */
+  #customizeModal.modal-overlay,
+  #qrShapeModal.modal-overlay {
+    z-index: 2600;
+  }
+
   .modal-box {
     background: rgba(5,9,4,0.1);
     border: 1px solid rgba(225, 79, 134, 0.3);
@@ -1522,6 +1531,21 @@
   .wish-card-tag { display:inline-block; font-size:10px; background:#f3f3f5; color:#777; border-radius:999px; padding:2px 8px; font-weight:700; }
   .wish-card-price { font-size:12px; font-weight:800; color:#22945a; white-space:nowrap; }
   .wish-card-heart { background:none; border:none; font-size:18px; color:#c22a63; cursor:pointer; flex:none; padding:0; }
+  /* ".modal-box button" (a generic full-width pink button reset used for the
+     account screen's modal-box) has higher CSS specificity than the single
+     class ".wish-card-heart" above, so it was winning and stretching this
+     icon-only heart button into a full-width bar. Re-assert the compact
+     icon look with matching specificity so it stays a small heart. */
+  .modal-box button.wish-card-heart,
+  .wish-card-new .wish-card-heart {
+    width: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: none !important;
+    color: #c22a63 !important;
+    border-radius: 0 !important;
+    font-size: 20px !important;
+  }
   .acct-settings-row { display:flex; align-items:center; justify-content:space-between; padding:14px 4px; border-bottom:1px solid #f0f0f0; font-size:13px; color:#171717; }
   .acct-settings-row .val { color:#999; }
   .acct-photo-wrap { position:relative; width:80px; height:80px; margin:0 auto 16px; }
@@ -2940,6 +2964,229 @@ html.ditemps-dark .card-title,
 html.ditemps-dark .section-sub,
 html.ditemps-dark footer {
   color: #f3f3f5 !important;
+}
+
+/* ============================================================
+   EXTENDED DARK MODE COVERAGE
+   The rules above only reached a handful of screens. Everywhere
+   else, an older "light mode retrofit" pass had hard-coded colors
+   with !important (template cards, prices, detail page, about
+   page, the wishlist/My Gifts cards, legal modal, etc.), so dark
+   mode never touched them and — in the wishlist/My Gifts cards —
+   the card background did go dark while the title text stayed
+   near-black, making it unreadable. This block gives all of those
+   the same dark palette used above (#101114 page / #191b20 cards /
+   #f3f3f5 primary text / #a9abb2 secondary text / #2c2e35 borders).
+============================================================ */
+
+/* My Gifts + Wishlist cards: title text was invisible on the dark card */
+html.ditemps-dark .gift-card-body h5,
+html.ditemps-dark .wish-card-body h5 {
+  color: #f3f3f5 !important;
+}
+html.ditemps-dark .gift-card-body p {
+  color: #a9abb2 !important;
+}
+html.ditemps-dark .wish-card-tag {
+  background: #26282e !important;
+  color: #a9abb2 !important;
+}
+html.ditemps-dark .gift-card-actions button {
+  background: #22242a !important;
+  border-color: #33353c !important;
+  color: #f3f3f5 !important;
+}
+html.ditemps-dark .gift-card-actions button.primary {
+  background: linear-gradient(135deg,#d6336c,#8a1c48) !important;
+  color: #fff !important;
+  border: none !important;
+}
+html.ditemps-dark .wish-card-heart {
+  color: #ff6b9c !important;
+}
+html.ditemps-dark .acct-settings-row {
+  color: #f3f3f5 !important;
+  border-bottom-color: #2b2d33 !important;
+}
+html.ditemps-dark .acct-settings-row .val {
+  color: #a9abb2 !important;
+}
+
+/* Store / browse page template cards */
+html.ditemps-dark .template-card {
+  background: #191b20 !important;
+  border-color: #2c2e35 !important;
+}
+html.ditemps-dark .card-image-box {
+  background: #22242a !important;
+}
+html.ditemps-dark .card-info h3 {
+  color: #f3f3f5 !important;
+}
+html.ditemps-dark .card-info p {
+  color: #a9abb2 !important;
+}
+html.ditemps-dark .price {
+  color: #f3f3f5 !important;
+}
+html.ditemps-dark .card-footer {
+  border-top-color: #2c2e35 !important;
+}
+html.ditemps-dark .search-box {
+  background: #191b20 !important;
+  border-color: #2c2e35 !important;
+}
+html.ditemps-dark .search-box input {
+  color: #f3f3f5 !important;
+}
+html.ditemps-dark .search-box input::placeholder {
+  color: #7d7f86 !important;
+}
+
+/* Template detail page */
+html.ditemps-dark .detail-hero {
+  background: #191b20 !important;
+  border-color: #2c2e35 !important;
+}
+html.ditemps-dark .detail-name {
+  color: #f3f3f5 !important;
+}
+html.ditemps-dark .detail-desc,
+html.ditemps-dark .detail-subheading {
+  color: #a9abb2 !important;
+}
+html.ditemps-dark .detail-footer-bar {
+  background: rgba(16,17,20,.97) !important;
+  border-top-color: #2c2e35 !important;
+}
+html.ditemps-dark .back-btn {
+  background: #191b20 !important;
+  border-color: #2c2e35 !important;
+  color: #f3f3f5 !important;
+}
+html.ditemps-dark .live-preview-wrap {
+  background: #191b20 !important;
+}
+html.ditemps-dark .live-preview-copy .lp-title {
+  color: #f3f3f5 !important;
+}
+
+/* About page */
+html.ditemps-dark .about-box {
+  background: #191b20 !important;
+  border-color: #2c2e35 !important;
+}
+html.ditemps-dark .about-grid-item,
+html.ditemps-dark .coins-action-row,
+html.ditemps-dark .ad-watch-box,
+html.ditemps-dark .redeem-item,
+html.ditemps-dark .refer-link-box,
+html.ditemps-dark .coins-tab-btn,
+html.ditemps-dark .multi-photo-icon,
+html.ditemps-dark .upload-box {
+  background: #22242a !important;
+  border-color: #33353c !important;
+}
+html.ditemps-dark .about-hero h3,
+html.ditemps-dark .about-section-block h4,
+html.ditemps-dark .about-grid-item h5,
+html.ditemps-dark .about-faq-item .faq-q {
+  color: #f3f3f5 !important;
+}
+html.ditemps-dark .about-section-block p,
+html.ditemps-dark .about-grid-item p,
+html.ditemps-dark .about-faq-item .faq-a {
+  color: #a9abb2 !important;
+}
+html.ditemps-dark .about-contact-box {
+  background: #2a1b22 !important;
+  border-color: #4a2632 !important;
+}
+
+/* Generic modal box (customize / QR / etc.) */
+html.ditemps-dark .modal-box {
+  background: #191b20 !important;
+  border-color: #2c2e35 !important;
+  color: #f3f3f5 !important;
+}
+
+/* Legal (Terms/Privacy) modal */
+html.ditemps-dark .ditemps-legal-card {
+  background: #191b20 !important;
+  color: #f3f3f5 !important;
+}
+html.ditemps-dark .ditemps-legal-card p,
+html.ditemps-dark .ditemps-legal-card li {
+  color: #a9abb2 !important;
+}
+html.ditemps-dark .ditemps-legal-close {
+  background: #26282e !important;
+  color: #f3f3f5 !important;
+}
+
+/* Back-navigation "are you sure" confirmation dialog */
+html.ditemps-dark .prep-back-card {
+  background: #191b20 !important;
+  color: #f3f3f5 !important;
+}
+html.ditemps-dark .prep-back-card p {
+  color: #a9abb2 !important;
+}
+
+/* ===== Landing page (the very first screen, before "Enter Ditemps") ===== */
+html.ditemps-dark #ditempsLandingPage {
+  background: #101114 !important;
+  color: #f3f3f5 !important;
+}
+html.ditemps-dark .dl-nav {
+  background: rgba(17,18,21,.92) !important;
+  border-color: #2c2e35 !important;
+}
+html.ditemps-dark .dl-brand-mark {
+  border-color: #33353c !important;
+}
+html.ditemps-dark .dl-signin {
+  color: #f3f3f5 !important;
+  border-color: #33353c !important;
+}
+html.ditemps-dark .dl-section {
+  border-top-color: #2c2e35 !important;
+}
+html.ditemps-dark .dl-strip-item {
+  background: #191b20 !important;
+}
+html.ditemps-dark .dl-strip::before {
+  background: linear-gradient(90deg,#101114 0%, rgba(16,17,20,.94) 20%, rgba(16,17,20,0) 100%) !important;
+}
+html.ditemps-dark .dl-strip::after {
+  background: linear-gradient(270deg,#101114 0%, rgba(16,17,20,.94) 20%, rgba(16,17,20,0) 100%) !important;
+}
+html.ditemps-dark .dl-featured-section {
+  background: #101114 !important;
+}
+html.ditemps-dark .dl-featured-head h2 {
+  color: #f3f3f5 !important;
+}
+html.ditemps-dark .dl-featured-card {
+  background: #191b20 !important;
+  border-color: #2c2e35 !important;
+  box-shadow: 0 8px 22px rgba(0,0,0,.35) !important;
+}
+html.ditemps-dark .dl-featured-card .card-image-box {
+  background: #22242a !important;
+}
+html.ditemps-dark .dl-featured-card h3,
+html.ditemps-dark .dl-featured-card .price {
+  color: #f3f3f5 !important;
+}
+html.ditemps-dark .dl-featured-card p {
+  color: #a9abb2 !important;
+}
+html.ditemps-dark .dl-faq details {
+  border-bottom-color: #2c2e35 !important;
+}
+html.ditemps-dark .dl-footer {
+  border-top-color: #2c2e35 !important;
 }
 
 @media (max-width: 600px) {
