@@ -4451,10 +4451,10 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
             <span class="auth-switch"><span class="auth-switch-knob"></span></span>
             Remember me
           </label>
-          <button type="button" class="auth-link-btn">Forgot password?</button>
+          <button type="button" class="auth-link-btn" onclick="handleForgotPassword()">Forgot password?</button>
         </div>
 
-        <button type="button" class="auth-submit-btn" id="authSubmitBtn" onclick="handleGoogleSignInClick()">
+        <button type="button" class="auth-submit-btn" id="authSubmitBtn" onclick="handleEmailAuthSubmit()">
           <span id="authSubmitLabel">Sign In</span>
         </button>
 
@@ -8301,6 +8301,12 @@ var qrcode = function() {
     function openLogin() {
       document.getElementById('loginModal').classList.add('active');
       pushOverlay('login', hideLogin);
+      const emailInput = document.getElementById('authEmailInput');
+      const passwordInput = document.getElementById('authPasswordInput');
+      const status = document.getElementById('loginStatusText');
+      if (emailInput) emailInput.value = '';
+      if (passwordInput) passwordInput.value = '';
+      if (status) status.textContent = '';
       if (typeof setAuthMode === 'function') setAuthMode('signin');
     }
     function hideLogin() {
@@ -8310,10 +8316,7 @@ var qrcode = function() {
       requestCloseOverlay('login', hideLogin);
     }
 
-    // ---------- AUTH SHEET UI (visual Sign in / Sign up toggle) ----------
-    // Only Google Sign-In is functional. The email/password fields, the
-    // Sign in/Sign up tabs, and the submit button are visual only and
-    // always route to Google sign-in when clicked.
+    // ---------- AUTH SHEET UI (Sign in / Sign up toggle) ----------
     function setAuthMode(mode) {
       const tabs = document.getElementById('authTabs');
       const signinTab = document.getElementById('authTabSignin');
@@ -8328,7 +8331,7 @@ var qrcode = function() {
       tabs.dataset.mode = mode;
       signinTab.classList.toggle('active', !isSignup);
       signupTab.classList.toggle('active', isSignup);
-      if (passwordField) passwordField.classList.toggle('shown', isSignup);
+      if (passwordField) passwordField.classList.add('shown');
       if (subtitle) subtitle.textContent = isSignup ? 'Create an account to save your surprises' : 'Welcome back — they miss you too';
       if (submitLabel) submitLabel.textContent = isSignup ? 'Create Account' : 'Sign In';
       if (rememberRow) rememberRow.style.display = isSignup ? 'none' : 'flex';
@@ -8772,6 +8775,15 @@ var qrcode = function() {
 
     // ---------- SETTINGS MODAL / ACCOUNT PAGE ----------
 
+    // Email/password accounts have no photoURL — fall back to a
+    // generated initials avatar (from a real image URL) instead of
+    // leaving src="" (which renders as a broken/blank image).
+    function getAvatarUrl(user) {
+      if (user && user.photoURL) return user.photoURL;
+      const name = (user && (user.displayName || user.email)) || 'User';
+      return 'https://ui-avatars.com/api/?background=C8385A&color=fff&bold=true&name=' + encodeURIComponent(name);
+    }
+
     function goHomeFromAccount() {
       closeSettings();
       if (typeof filterMenu === 'function') filterMenu('all');
@@ -8798,9 +8810,9 @@ var qrcode = function() {
       pushOverlay('settings', hideSettings);
       const u = getCurrentUser();
       if (u) {
-        document.getElementById('acctAvatar').src = u.photoURL || '';
+        document.getElementById('acctAvatar').src = getAvatarUrl(u);
         document.getElementById('acctName').textContent = u.displayName || 'User';
-        document.getElementById('acctSettingsPhoto').src = u.photoURL || '';
+        document.getElementById('acctSettingsPhoto').src = getAvatarUrl(u);
         document.getElementById('acctSettingsName').innerHTML = escapeHtml(u.displayName || 'User') + ' ›';
         document.getElementById('acctSettingsEmail').textContent = u.email || '';
         updateDitempsSettingsDetails(u);
@@ -8999,7 +9011,8 @@ function confirmLogout() {
     import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
     import {
       getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
-      onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, updateProfile
+      onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence,
+      updateProfile, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail
     } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
     import {
       getFirestore, doc, collection, query, orderBy, where,
@@ -9128,6 +9141,79 @@ function confirmLogout() {
       }
     };
 
+    // ---------- EMAIL / PASSWORD AUTH (Sign in + Sign up) ----------
+    function isValidEmail(value) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value || ''); }
+
+    function emailAuthErrorMessage(err) {
+      const code = err && err.code;
+      if (code === 'auth/email-already-in-use') return 'An account already exists with this email. Try signing in instead.';
+      if (code === 'auth/invalid-email') return 'Please enter a valid email address.';
+      if (code === 'auth/weak-password') return 'Password should be at least 6 characters.';
+      if (code === 'auth/missing-password') return 'Please enter a password.';
+      if (code === 'auth/user-not-found' || code === 'auth/invalid-credential') return 'No account found with this email/password. Check details or sign up.';
+      if (code === 'auth/wrong-password') return 'Incorrect password. Please try again.';
+      if (code === 'auth/too-many-requests') return 'Too many attempts. Please wait a bit and try again.';
+      if (code === 'auth/network-request-failed') return 'Network error. Check your internet and try again.';
+      if (code === 'auth/operation-not-allowed') return 'Email/Password login is not enabled in Firebase Authentication.';
+      return 'Something went wrong. Please try again.';
+    }
+
+    window.handleEmailAuthSubmit = async function () {
+      const status = document.getElementById('loginStatusText');
+      const submitBtn = document.getElementById('authSubmitBtn');
+      const emailInput = document.getElementById('authEmailInput');
+      const passwordInput = document.getElementById('authPasswordInput');
+      const rememberLabel = document.getElementById('authRememberLabel');
+      const isSignup = document.getElementById('authTabs')?.dataset.mode === 'signup';
+
+      const email = (emailInput && emailInput.value || '').trim();
+      const password = passwordInput ? passwordInput.value : '';
+
+      if (!isValidEmail(email)) { if (status) status.textContent = 'Please enter a valid email address.'; return; }
+      if (!password || password.length < 6) { if (status) status.textContent = 'Password should be at least 6 characters.'; return; }
+
+      if (submitBtn) submitBtn.disabled = true;
+      if (status) status.textContent = isSignup ? 'Creating your account…' : 'Signing you in…';
+
+      try {
+        if (!isSignup) {
+          const remember = rememberLabel ? rememberLabel.classList.contains('checked') : true;
+          await setPersistence(auth, remember ? browserLocalPersistence : browserSessionPersistence);
+        }
+
+        const result = isSignup
+          ? await createUserWithEmailAndPassword(auth, email, password)
+          : await signInWithEmailAndPassword(auth, email, password);
+
+        if (result && result.user) {
+          await saveUserData(result.user);
+        }
+        if (status) status.textContent = '';
+      } catch (err) {
+        console.error('Email auth failed:', err);
+        if (status) status.textContent = emailAuthErrorMessage(err);
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    };
+
+    window.handleForgotPassword = async function () {
+      const status = document.getElementById('loginStatusText');
+      const emailInput = document.getElementById('authEmailInput');
+      const email = (emailInput && emailInput.value || '').trim();
+      if (!isValidEmail(email)) {
+        if (status) status.textContent = 'Enter your email above first, then tap "Forgot password?".';
+        return;
+      }
+      try {
+        await sendPasswordResetEmail(auth, email);
+        if (status) status.textContent = 'Password reset email sent — please check your inbox.';
+      } catch (err) {
+        console.error('Password reset failed:', err);
+        if (status) status.textContent = emailAuthErrorMessage(err);
+      }
+    };
+
     // Firebase login code is fully loaded and ready to use from here on.
     window.__firebaseReady = true;
 
@@ -9171,7 +9257,7 @@ function confirmLogout() {
         if (loginBtn) loginBtn.style.display = 'none';
         if (userChip) userChip.style.display = 'flex';
         if (userPhoto) {
-          userPhoto.src = user.photoURL || '';
+          userPhoto.src = getAvatarUrl(user);
           userPhoto.alt = user.displayName || 'User';
         }
         if (userName) userName.textContent = user.displayName || 'Account';
