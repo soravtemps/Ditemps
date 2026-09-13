@@ -9664,6 +9664,23 @@ function confirmLogout() {
         listEl.innerHTML = '<div class="empty-note">Wallet purchases could not be loaded. Check Firestore rules.</div>';
       }
     };
+
+    // ============================================================
+    // # EXPOSE TO THE REST OF THE SITE #
+    // This block lives in a <script type="module">, and modules keep
+    // their own top-level scope — anything declared here (db, doc,
+    // getCurrentUser, etc.) is invisible to the site's other, older
+    // <script> tags even though they call these same names directly.
+    // Attaching them to window is what makes those calls resolve.
+    // ============================================================
+    Object.assign(window, {
+      auth, db, provider,
+      doc, collection, query, orderBy, where,
+      setDoc, addDoc, getDoc, getDocs, onSnapshot, runTransaction,
+      increment, arrayUnion, arrayRemove, serverTimestamp,
+      getCurrentUser, deleteUser, sendEmailVerification,
+      reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider
+    });
   </script>
 
 <script id="ditemps-header-landing-behavior">
