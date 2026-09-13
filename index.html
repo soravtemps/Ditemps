@@ -2115,7 +2115,10 @@ body {
 .auth-sheet-body .modal-close { margin-top: 14px !important; width: 100%; }
 
 /* ===== DITEMPS LANDING PAGE ===== */
-body.ditemps-landing-active > *:not(#ditempsLandingPage) { display:none !important; }
+body.ditemps-landing-active > *:not(#ditempsLandingPage):not(.modal-overlay) { display:none !important; }
+/* Modals (login, settings, wallet, etc.) must still render above the
+   landing page instead of being buried behind its z-index:999999 layer. */
+body.ditemps-landing-active > .modal-overlay.active { z-index:1000010 !important; }
 #ditempsLandingPage{position:relative;z-index:999999;display:block;background:#fff;color:#171717;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh;overflow:hidden}
 #ditempsLandingPage *{box-sizing:border-box}
 .dl-wrap{width:min(1100px,calc(100% - 32px));margin:0 auto}
@@ -3747,23 +3750,20 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
   transform: none !important;
 }
 </style>
-
-<style id="ditemps-legal-pages-css">
-.ditemps-legal-modal{display:none;position:fixed;inset:0;z-index:10000000;align-items:center;justify-content:center;padding:18px}
-.ditemps-legal-modal.active{display:flex}
-.ditemps-legal-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.58);backdrop-filter:blur(5px)}
-.ditemps-legal-card{position:relative;width:min(760px,100%);max-height:88vh;overflow:auto;background:#fff;color:#171717;border-radius:22px;padding:28px;box-shadow:0 24px 80px rgba(0,0,0,.25);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
-.ditemps-legal-card h2{font-family:Georgia,serif;font-size:32px;margin:0 42px 18px 0}
-.ditemps-legal-card h3{font-size:17px;margin:22px 0 8px}.ditemps-legal-card p,.ditemps-legal-card li{font-size:14px;line-height:1.7;color:#555}.ditemps-legal-card ul{padding-left:20px}.ditemps-legal-close{position:absolute;right:14px;top:12px;border:0;background:#f3f3f3;border-radius:50%;width:38px;height:38px;font-size:25px;cursor:pointer}
-@media(max-width:600px){.ditemps-legal-card{padding:22px 18px;border-radius:18px;max-height:92vh}.ditemps-legal-card h2{font-size:27px}.ditemps-legal-card p,.ditemps-legal-card li{font-size:13px}}
-</style>
 </head>
 <body>
 
   <div id="ditempsLandingPage" aria-label="Ditemps landing page">
     <nav class="dl-nav">
       <div class="dl-brand"><span class="dl-brand-mark"><img src="https://files.catbox.moe/kkta4i.png" alt="Ditemps logo"></span>Ditemps</div>
-      <div class="dl-nav-actions"><button class="dl-signin" onclick="if(typeof openLogin==='function') openLogin();">Sign in</button><button class="dl-enter" onclick="enterDitempsApp()">Enter Ditemps</button></div>
+      <div class="dl-nav-actions">
+        <button id="landingUserChip" class="ditemps-nav-profile" type="button" onclick="openSettings()" aria-label="Open profile" style="display:none;">
+          <img id="landingUserPhoto" src="" alt="Profile">
+        </button>
+        <div id="landingCoinChip" class="ditemps-wallet-chip" style="display:none; cursor:pointer;" aria-label="Website wallet balance" onclick="openWalletModal()">₹<span id="landingCoinBalance">0</span></div>
+        <button class="dl-signin" id="landingSigninBtn" onclick="if(typeof openLogin==='function') openLogin();">Sign in</button>
+        <button class="dl-enter" onclick="enterDitempsApp()">Enter Ditemps</button>
+      </div>
     </nav>
     <main>
       <section class="dl-hero">
@@ -3840,15 +3840,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
 
       <section class="dl-final"><h2>Create something beautiful for someone you love.</h2><p>Made with ❤️ in India</p><button class="dl-cta" onclick="enterDitempsApp()">Enter Ditemps</button></section>
     </main>
-    <footer class="dl-footer"><div class="dl-wrap dl-footer-inner"><span>© 2026 Ditemps. All rights reserved.</span><span><a href="javascript:void(0)" onclick="showDitempsTerms();return false;">Terms of Service</a><a href="javascript:void(0)" onclick="showDitempsPrivacy();return false;">Privacy Policy</a><a href="javascript:void(0)" onclick="contactDitempsSupport();return false;">Contact Us</a><a href="javascript:void(0)" onclick="showDitempsDmca();return false;">DMCA Policy</a></span></div></footer>
-    <div id="ditempsLegalModal" class="ditemps-legal-modal" aria-hidden="true">
-      <div class="ditemps-legal-backdrop" onclick="closeDitempsLegal()"></div>
-      <div class="ditemps-legal-card" role="dialog" aria-modal="true" aria-labelledby="ditempsLegalTitle">
-        <button type="button" class="ditemps-legal-close" onclick="closeDitempsLegal()" aria-label="Close">×</button>
-        <h2 id="ditempsLegalTitle">Ditemps</h2>
-        <div id="ditempsLegalContent"></div>
-      </div>
-    </div>
+    <footer class="dl-footer"><div class="dl-wrap dl-footer-inner"><span>© 2026 Ditemps. All rights reserved.</span><span><a href="#">Terms of Service</a><a href="#">Privacy Policy</a><a href="#">Contact Us</a></span></div></footer>
   </div>
 
 
@@ -3856,16 +3848,6 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
 (function(){
   document.body.classList.add('ditemps-landing-active');
   window.enterDitempsApp = function(){
-    // The landing page is the first screen, so the global preparation loader
-    // must never cover the main app when entering from the landing page.
-    var prepLoader = document.getElementById('sitePrepLoader');
-    if (prepLoader) {
-      prepLoader.classList.add('hidden');
-      prepLoader.setAttribute('aria-busy', 'false');
-    }
-    var prepDialog = document.getElementById('prepBackDialog');
-    if (prepDialog) prepDialog.classList.remove('active');
-
     // Leave landing mode first so the main app sections become visible again.
     document.body.classList.remove('ditemps-landing-active');
     var landing=document.getElementById('ditempsLandingPage');
@@ -4695,13 +4677,11 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
         </div>
 
         <div class="ditemps-settings-section">
-          <div class="ditemps-settings-title">SUPPORT &amp; LEGAL</div>
+          <div class="ditemps-settings-title">SUPPORT</div>
           <div class="ditemps-settings-card">
             <button class="ditemps-action-row" onclick="contactDitempsSupport()"><span>Contact support</span><span>›</span></button>
             <button class="ditemps-action-row" onclick="showDitempsPrivacy()"><span>Privacy policy</span><span>›</span></button>
-            <button class="ditemps-action-row" onclick="showDitempsTerms()"><span>Terms of Service</span><span>›</span></button>
-            <button class="ditemps-action-row" onclick="showDitempsDmca()"><span>DMCA Policy</span><span>›</span></button>
-            <button class="ditemps-action-row" onclick="showDitempsAbout()"><span>About Us</span><span>›</span></button>
+            <button class="ditemps-action-row" onclick="showDitempsTerms()"><span>About Us</span><span>›</span></button>
           </div>
         </div>
 
@@ -8504,69 +8484,26 @@ var qrcode = function() {
 
     async function likeCurrentTemplate() {
       if (!currentDetailItem) return;
-      if (!window.isUserLoggedIn || !window.currentUserUid) {
-        openLogin();
-        return;
-      }
-
       const name = currentDetailItem.name;
-      const userRef = doc(db, 'users', window.currentUserUid);
-      const statsRef = doc(db, 'templateStats', encodeURIComponent(name));
-
+      const localKey = 'ditemps_liked_' + encodeURIComponent(name);
+      if (likedTemplateCache.has(name) || localStorage.getItem(localKey)) return;
       try {
-        let likedAfter = false;
-        await runTransaction(db, async (tx) => {
-          const userSnap = await tx.get(userRef);
-          const statsSnap = await tx.get(statsRef);
-
-          const userData = userSnap.exists() ? (userSnap.data() || {}) : {};
-          const liked = Array.isArray(userData.likedTemplates) ? userData.likedTemplates : [];
-          const alreadyLiked = liked.includes(name);
-
-          const statsData = statsSnap.exists() ? (statsSnap.data() || {}) : {};
-          const currentLikes = Math.max(0, Number(statsData.likes || 0));
-
-          if (alreadyLiked) {
-            tx.set(userRef, { likedTemplates: arrayRemove(name) }, { merge: true });
-            tx.set(statsRef, {
-              name,
-              likes: Math.max(0, currentLikes - 1),
-              updatedAt: serverTimestamp()
-            }, { merge: true });
-            likedAfter = false;
-          } else {
-            tx.set(userRef, { likedTemplates: arrayUnion(name) }, { merge: true });
-            tx.set(statsRef, {
-              name,
-              likes: currentLikes + 1,
-              updatedAt: serverTimestamp()
-            }, { merge: true });
-            likedAfter = true;
-          }
-        });
-
-        if (likedAfter) likedTemplateCache.add(name);
-        else likedTemplateCache.delete(name);
-
-        const fresh = await getDoc(statsRef);
-        const data = fresh.exists() ? (fresh.data() || {}) : {};
-        templateStatsCache.set(name, {
-          views: Number(data.views || 0),
-          likes: Number(data.likes || 0)
-        });
-
+        const statsRef = doc(db, 'templateStats', encodeURIComponent(name));
+        await setDoc(statsRef, { name, likes: increment(1), updatedAt: serverTimestamp() }, { merge: true });
+        localStorage.setItem(localKey, '1');
+        likedTemplateCache.add(name);
+        const current = templateStatsCache.get(name) || { views: 0, likes: 0 };
+        current.likes += 1;
+        templateStatsCache.set(name, current);
         updateRenderedTemplateStats(currentDetailItem);
         updateLikeButton();
-      } catch (e) {
-        console.error('Firebase like update failed:', e);
-        alert('Like could not be saved. Please try again.');
-      }
+      } catch (e) { console.error(e); alert('Like could not be saved. Please try again.'); }
     }
 
     function updateLikeButton() {
       const btn = document.getElementById('detailLikeBtn');
       if (!btn || !currentDetailItem) return;
-      const liked = likedTemplateCache.has(currentDetailItem.name);
+      const liked = likedTemplateCache.has(currentDetailItem.name) || localStorage.getItem('ditemps_liked_' + encodeURIComponent(currentDetailItem.name));
       btn.classList.toggle('active', !!liked);
       btn.textContent = liked ? '♥ Liked' : '♡ Like';
     }
@@ -8600,18 +8537,10 @@ var qrcode = function() {
       try {
         const snap = await getDoc(doc(db, 'users', window.currentUserUid));
         const data = snap.exists() ? (snap.data() || {}) : {};
-
         wishlistCache.clear();
         (Array.isArray(data.wishlist) ? data.wishlist : []).forEach(x => wishlistCache.add(x));
-
-        likedTemplateCache.clear();
-        (Array.isArray(data.likedTemplates) ? data.likedTemplates : []).forEach(x => likedTemplateCache.add(x));
-
         updateWishlistButton();
-        updateLikeButton();
-      } catch (e) {
-        console.warn('Firebase wishlist/likes load failed:', e);
-      }
+      } catch (e) { console.warn('Wishlist load failed:', e); }
     }
 
     // Looks up a template's image/category/price by name from the
@@ -8641,6 +8570,8 @@ var qrcode = function() {
           return tb - ta;
         });
         const gCount = document.getElementById('acctStatGifts'); if (gCount) gCount.textContent = rows.length;
+        // Ditemps gift links never expire, so every purchased gift counts as "Live".
+        const liveCount = document.getElementById('acctStatLive'); if (liveCount) liveCount.textContent = rows.length;
         if (!rows.length) { list.innerHTML = '<div class="empty-note">You have not purchased any gifts or templates yet.</div>'; return; }
         list.innerHTML = rows.map(d => {
           const found = findTemplateByName(d.templateName);
@@ -8655,7 +8586,7 @@ var qrcode = function() {
               <p>${escapeHtml(category)}${time ? ' · ' + escapeHtml(time) : ''}</p>
               <span class="gift-status-chip">Purchased</span>
               <div class="gift-card-actions">
-                ${link ? `<button class="primary" onclick="window.open(decodeURIComponent('${encodeURIComponent(link)}'),'_blank')">Open</button>` : ''}
+                ${link ? `<button class="primary" onclick="trackAndOpenGift(decodeURIComponent('${encodeURIComponent(link)}'))">Open</button>` : ''}
                 <button onclick="shareGiftLink(decodeURIComponent('${encodeURIComponent(link || '')}'),decodeURIComponent('${encodeURIComponent(d.templateName || 'Template')}'))">Share</button>
               </div>
             </div>
@@ -8664,65 +8595,20 @@ var qrcode = function() {
       } catch (e) { console.error(e); list.innerHTML = '<div class="empty-note">Orders could not be loaded. Please check Firestore rules.</div>'; }
     }
 
+    // Real "Opens" counter: increments in Firestore each time the account
+    // owner actually opens one of their purchased gift links.
+    window.trackAndOpenGift = function (link) {
+      if (link) window.open(link, '_blank');
+      if (window.currentUserUid) {
+        setDoc(doc(db, 'users', window.currentUserUid), { openCount: increment(1) }, { merge: true }).catch(e => console.warn('Open tracking failed:', e));
+      }
+    };
+
     window.shareGiftLink = function (link, name) {
       const text = `Check out my "${name}" gift on Ditemps: ${link}`;
       if (navigator.share) navigator.share({ title: name, text, url: link }).catch(() => {});
       else if (link) { navigator.clipboard && navigator.clipboard.writeText(link).catch(() => {}); alert('Link copied!'); }
     };
-
-    function firstNumber(obj, keys, fallback) {
-      for (const key of keys) {
-        if (obj && obj[key] != null && obj[key] !== '') {
-          const n = Number(obj[key]);
-          if (Number.isFinite(n)) return n;
-        }
-      }
-      return fallback;
-    }
-
-    async function loadAccountProfileStats() {
-      if (!window.currentUserUid) return;
-      try {
-        const [userSnap, ordersSnap] = await Promise.all([
-          getDoc(doc(db, 'users', window.currentUserUid)),
-          getDocs(query(collection(db, 'orders'), where('buyerUid', '==', window.currentUserUid)))
-        ]);
-
-        const userData = userSnap.exists() ? (userSnap.data() || {}) : {};
-        const orders = [];
-        ordersSnap.forEach(ds => orders.push(ds.data() || {}));
-
-        // Prefer explicit Firebase user-level stats when the project has them.
-        const stats = userData.stats && typeof userData.stats === 'object' ? userData.stats : {};
-        const gifts = firstNumber(stats, ['gifts', 'giftCount'], orders.length);
-
-        let opens = firstNumber(stats, ['opens', 'openCount'], NaN);
-        let live = firstNumber(stats, ['live', 'liveCount'], NaN);
-        let sessions = firstNumber(stats, ['sessions', 'sessionCount'], NaN);
-
-        // Otherwise derive only from real order fields that exist.
-        if (!Number.isFinite(opens)) {
-          opens = orders.reduce((sum, o) => sum + firstNumber(o, ['opens', 'openCount', 'views'], 0), 0);
-        }
-        if (!Number.isFinite(live)) {
-          live = orders.reduce((sum, o) => sum + ((o.isLive === true || String(o.status || '').toLowerCase() === 'live') ? 1 : 0), 0);
-        }
-        if (!Number.isFinite(sessions)) {
-          sessions = orders.reduce((sum, o) => sum + firstNumber(o, ['sessions', 'sessionCount'], 0), 0);
-        }
-
-        const set = (id, value) => {
-          const el = document.getElementById(id);
-          if (el) el.textContent = String(Math.max(0, Math.floor(Number(value) || 0)));
-        };
-        set('acctStatGifts', gifts);
-        set('acctStatOpens', opens);
-        set('acctStatLive', live);
-        set('acctStatSessions', sessions);
-      } catch (e) {
-        console.warn('Firebase profile stats unavailable:', e);
-      }
-    }
 
     async function loadAccountWishlist() {
       const list = document.getElementById('settingsWishlistList');
@@ -8757,7 +8643,6 @@ var qrcode = function() {
         wishlistCache.delete(name);
         updateWishlistButton();
         loadAccountWishlist();
-        loadAccountProfileStats();
       } catch (e) { console.error(e); alert('Wishlist update failed. Please try again.'); }
     };
 
@@ -8837,60 +8722,44 @@ var qrcode = function() {
 
     window.editAccountCity = async function () {
       if (!window.currentUserUid) return;
-      const currentEl = document.getElementById('acctSettingsCity');
-      const current = currentEl ? currentEl.textContent.replace(/\\s*›\\s*$/, '').trim() : '';
-      const next = prompt('Enter your city:', current === 'Add city' ? '' : current);
+      const current = window.currentUserCity || '';
+      const next = prompt('Enter your city:', current);
       if (next === null) return;
       const value = next.trim();
+      const el = document.getElementById('acctSettingsCity');
+      if (el) el.textContent = value ? value + ' ›' : 'Add city ›';
       try {
         await setDoc(doc(db, 'users', window.currentUserUid), { city: value }, { merge: true });
+        window.currentUserCity = value;
       } catch (e) {
         console.error(e);
         alert('City could not be saved. Please try again.');
+        if (el) el.textContent = current ? current + ' ›' : 'Add city ›';
       }
     };
 
-    function updateDitempsSettingsDetails(u, profileData) {
-      const data = profileData || {};
-      const name = String(data.name || data.displayName || data.username || data.fullName || (u && u.displayName) || ((u && u.email) ? u.email.split('@')[0] : '') || 'User').trim() || 'User';
-      const email = String(data.email || (u && u.email) || '—').trim() || '—';
-      const photoURL = String(data.photoURL || data.avatar || data.profilePhoto || (u && u.photoURL) || '').trim();
+    function updateDitempsSettingsDetails(u) {
+      const name = u && u.displayName ? u.displayName : 'User';
+      const email = u && u.email ? u.email : '—';
 
       const headName = document.getElementById('acctSettingsHeadName');
       const headEmail = document.getElementById('acctSettingsHeadEmail');
-      const photo = document.getElementById('acctSettingsPhoto');
-      const topPhoto = document.getElementById('acctAvatar');
-      const topName = document.getElementById('acctName');
-
       if (headName) headName.textContent = name;
       if (headEmail) headEmail.textContent = email;
-      if (topName) topName.textContent = name;
 
-      const avatarUser = Object.assign({}, u || {}, { displayName: name, email: email, photoURL: photoURL || (u && u.photoURL) || '' });
-      const avatarUrl = getAvatarUrl(avatarUser);
-      if (photo) {
-        photo.onerror = function(){ this.onerror = null; this.src = getAvatarUrl({displayName:name, email:email}); };
-        photo.src = avatarUrl;
-      }
-      if (topPhoto) {
-        topPhoto.onerror = function(){ this.onerror = null; this.src = getAvatarUrl({displayName:name, email:email}); };
-        topPhoto.src = avatarUrl;
-      }
-
-      const city = String(data.city || data.location || data.town || '').trim();
+      const city = window.currentUserCity || '';
       const cityEl = document.getElementById('acctSettingsCity');
       if (cityEl) cityEl.textContent = city ? city + ' ›' : 'Add city ›';
 
+      const opensEl = document.getElementById('acctStatOpens');
+      if (opensEl) opensEl.textContent = Number(window.currentUserOpenCount || 0);
+      const sessionsEl = document.getElementById('acctStatSessions');
+      if (sessionsEl) sessionsEl.textContent = Number(window.currentUserSessionCount || 0);
+
       const member = document.getElementById('acctSettingsMemberSince');
+      const since = document.getElementById('acctSince');
       if (member) {
-        const rawCreated = data.createdAt || data.memberSince || null;
-        let t = null;
-        if (rawCreated && typeof rawCreated.toDate === 'function') t = rawCreated.toDate();
-        else if (rawCreated && typeof rawCreated.toMillis === 'function') t = new Date(rawCreated.toMillis());
-        else if (rawCreated) t = new Date(rawCreated);
-        if (!t || Number.isNaN(t.getTime())) {
-          t = u && u.metadata && u.metadata.creationTime ? new Date(u.metadata.creationTime) : null;
-        }
+        const t = u && u.metadata && u.metadata.creationTime ? new Date(u.metadata.creationTime) : null;
         member.textContent = t ? t.toLocaleDateString(undefined, {month:'long', year:'numeric'}) : '—';
       }
 
@@ -8916,121 +8785,25 @@ var qrcode = function() {
         emailStatus.classList.toggle('not-connected', !isEmailAccount);
       }
 
-      const walletValue = Number(data.walletBalance != null ? data.walletBalance : (data.balance != null ? data.balance : (data.coins != null ? data.coins : (window.currentUserWallet || 0))));
       const wallet = document.getElementById('acctSettingsWallet');
-      if (wallet) wallet.textContent = '₹' + (window.isAdminUser ? '∞' : walletValue);
+      if (wallet) wallet.textContent = '₹' + (window.isAdminUser ? '∞' : Number(window.currentUserWallet || 0));
 
       const ref = document.getElementById('acctSettingsReferral');
-      if (ref) {
-        ref.textContent = (data.referralCode || data.referral || data.refCode) ? String(data.referralCode || data.referral || data.refCode) :
-          (window.currentUserUid ? String(window.currentUserUid).slice(-8).toUpperCase() : '—');
-      }
+      if (ref) ref.textContent = window.currentUserUid ? String(window.currentUserUid).slice(-8).toUpperCase() : '—';
 
       loadDitempsSettingsToggles();
     }
 
-    let userProfileUnsub = null;
-    function listenToUserProfile(uid) {
-      if (userProfileUnsub) { userProfileUnsub(); userProfileUnsub = null; }
-      if (!uid) return;
-
-      userProfileUnsub = onSnapshot(doc(db, 'users', uid), (snap) => {
-        const data = snap.exists() ? (snap.data() || {}) : {};
-        const u = getCurrentUser();
-
-        updateDitempsSettingsDetails(u, data);
-
-        // Keep the authenticated user's visible name/photo in sync with Firestore.
-        const firestoreName = String(data.name || data.displayName || data.username || data.fullName || '').trim();
-        const firestorePhoto = String(data.photoURL || data.avatar || data.profilePhoto || '').trim();
-        const navName = document.getElementById('navUserName');
-        const navPhoto = document.getElementById('navUserPhoto');
-        if (navName) navName.textContent = firestoreName || (u && u.displayName) || 'Account';
-        if (navPhoto) {
-          navPhoto.onerror = function(){ this.onerror = null; this.src = getAvatarUrl({displayName:firestoreName || (u && u.displayName) || 'User', email:(u && u.email) || ''}); };
-          navPhoto.src = getAvatarUrl({displayName:firestoreName || (u && u.displayName) || 'User', email:(u && u.email) || '', photoURL:firestorePhoto || (u && u.photoURL) || ''});
-        }
-
-        const wallet = Number(data.walletBalance != null ? data.walletBalance : (data.balance != null ? data.balance : (data.coins || 0)));
-        const profileBal = document.getElementById('profileWalletBalance');
-        if (profileBal) profileBal.textContent = window.isAdminUser ? '∞' : wallet;
-        const acctBal = document.getElementById('acctSettingsWallet');
-        if (acctBal) acctBal.textContent = '₹' + (window.isAdminUser ? '∞' : wallet);
-
-        wishlistCache.clear();
-        (Array.isArray(data.wishlist) ? data.wishlist : []).forEach(x => wishlistCache.add(x));
-        likedTemplateCache.clear();
-        (Array.isArray(data.likedTemplates) ? data.likedTemplates : []).forEach(x => likedTemplateCache.add(x));
-        updateWishlistButton();
-        updateLikeButton();
-
-        loadAccountWishlist();
-      }, (err) => console.warn('Firebase user profile listener failed:', err));
-    }
-
-    const DITEMPS_SUPPORT_EMAIL = 'ditempsofficial@gmail.com';
-    const DITEMPS_SITE_URL = 'https://ditemps-eosin.vercel.app/';
-
-    window.openDitempsLegal = function(title, html) {
-      const modal=document.getElementById('ditempsLegalModal');
-      const titleEl=document.getElementById('ditempsLegalTitle');
-      const content=document.getElementById('ditempsLegalContent');
-      if(!modal || !content) return;
-      if(titleEl) titleEl.textContent=title;
-      content.innerHTML=html;
-      modal.classList.add('active');
-      modal.setAttribute('aria-hidden','false');
-    };
-
-    window.closeDitempsLegal = function() {
-      const modal=document.getElementById('ditempsLegalModal');
-      if(modal){ modal.classList.remove('active'); modal.setAttribute('aria-hidden','true'); }
-    };
-
     window.contactDitempsSupport = function () {
-      window.location.href = 'mailto:' + DITEMPS_SUPPORT_EMAIL + '?subject=Ditemps%20Support';
+      window.location.href = 'mailto:support@ditemps.com?subject=Ditemps%20Support';
     };
 
     window.showDitempsPrivacy = function () {
-      openDitempsLegal('Privacy Policy', `
-        <p><strong>Last updated: September 13, 2026</strong></p>
-        <p>Ditemps respects your privacy. This policy explains how information is used when you use Ditemps.</p>
-        <h3>Information we may collect</h3>
-        <ul><li>Account information such as your name, email address and profile photo.</li><li>Wishlist, profile, order and wallet-related activity needed to provide the service.</li><li>Template or personalised content that you choose to create or submit.</li><li>Basic technical information needed for security and service operation.</li></ul>
-        <h3>How we use information</h3><p>We use information to provide login, profiles, templates, wishlist, orders, gift features, security and support.</p>
-        <h3>Sharing</h3><p>We do not sell your private account information. Service providers such as Firebase may process information needed to operate authentication and related features.</p>
-        <h3>Account deletion</h3><p>You can request help with account or data deletion by contacting <strong>${DITEMPS_SUPPORT_EMAIL}</strong>.</p>
-        <h3>Contact</h3><p>Email: <strong>${DITEMPS_SUPPORT_EMAIL}</strong></p>`);
+      alert('Privacy Policy\\n\\nDitemps uses your account information only to provide login, profile, wishlist, orders, and gift features. We do not display your private account information publicly.');
     };
 
     window.showDitempsTerms = function () {
-      openDitempsLegal('Terms of Service', `
-        <p><strong>Last updated: September 13, 2026</strong></p>
-        <p>By using Ditemps, you agree to use the service lawfully and responsibly.</p>
-        <h3>Service</h3><p>Ditemps provides digital templates and personalised digital experiences.</p>
-        <h3>Accounts</h3><p>You are responsible for activity under your account and for keeping your login information secure.</p>
-        <h3>Content and intellectual property</h3><p>Ditemps templates, branding and site materials belong to Ditemps or their respective rights holders. Do not copy, redistribute or misuse them. You remain responsible for content you upload or create.</p>
-        <h3>Payments and refunds</h3><p>Where payments or wallet features are offered, transactions must be used honestly. For an eligible refund request, Ditemps will verify the request and the team will review it before a refund is approved or declined. Providing false information may result in the request being rejected.</p>
-        <h3>Misuse</h3><p>Do not attempt to abuse referrals, rewards, payment systems, accounts, security controls or other users.</p>
-        <h3>Changes</h3><p>Ditemps may update features, availability or these terms when necessary.</p>
-        <h3>Contact</h3><p>Email: <strong>${DITEMPS_SUPPORT_EMAIL}</strong></p>`);
-    };
-
-    window.showDitempsDmca = function () {
-      openDitempsLegal('DMCA Policy', `
-        <p><strong>Last updated: September 13, 2026</strong></p>
-        <p>Ditemps respects copyright and will review valid notices concerning material hosted through the service.</p>
-        <h3>Copyright complaint</h3><p>Please email <strong>${DITEMPS_SUPPORT_EMAIL}</strong> with the copyrighted work, the material or page you believe infringes it, your contact information, a good-faith statement that the use is unauthorised, and a statement that the information in your notice is accurate.</p>
-        <h3>Review</h3><p>Ditemps may review the notice and take appropriate action where infringement is established or reasonably supported.</p>
-        <h3>Counter-notice</h3><p>If content was removed because of a copyright complaint and you believe the removal was mistaken, you may contact the same email with an explanation and supporting information for review.</p>
-        <h3>Contact</h3><p>DMCA email: <strong>${DITEMPS_SUPPORT_EMAIL}</strong></p>`);
-    };
-
-    window.showDitempsAbout = function () {
-      closeSettings();
-      if (typeof filterMenu === 'function') {
-        setTimeout(function(){ filterMenu('about'); window.scrollTo({top:0,behavior:'smooth'}); }, 120);
-      }
+      alert('Terms of Use\\n\\nBy using Ditemps, you agree to use the service lawfully and not misuse referrals, rewards, accounts, or payment features.');
     };
 
     window.deleteDitempsAccount = async function () {
@@ -9115,12 +8888,7 @@ var qrcode = function() {
     function getAvatarUrl(user) {
       if (user && user.photoURL) return user.photoURL;
       const name = (user && (user.displayName || user.email)) || 'User';
-      const initials = name.trim().split(/\\s+/).map(function(p){ return p.charAt(0); }).join('').slice(0,2).toUpperCase() || 'U';
-      const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">' +
-        '<rect width="160" height="160" rx="80" fill="#f1f1f3"/>' +
-        '<text x="80" y="96" text-anchor="middle" font-family="Arial,sans-serif" font-size="58" font-weight="700" fill="#c22a63">' +
-        initials.replace(/[&<>"]/g, '') + '</text></svg>';
-      return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+      return 'https://ui-avatars.com/api/?background=C8385A&color=fff&bold=true&name=' + encodeURIComponent(name);
     }
 
     function goHomeFromAccount() {
@@ -9135,12 +8903,10 @@ var qrcode = function() {
       const next = prompt('Enter your new name:', u.displayName || '');
       if (!next || !next.trim() || next.trim() === u.displayName) return;
       try {
-        const value = next.trim();
-        await updateProfile(u, { displayName: value });
-        await setDoc(doc(db, 'users', u.uid), { name: value }, { merge: true });
-        document.getElementById('acctName').textContent = value;
-        const hn = document.getElementById('acctSettingsHeadName'); if (hn) hn.textContent = value;
-        const sn = document.getElementById('acctSettingsName'); if (sn) sn.textContent = value + ' ›';
+        await updateProfile(u, { displayName: next.trim() });
+        document.getElementById('acctName').textContent = next.trim();
+        const hn = document.getElementById('acctSettingsHeadName'); if (hn) hn.textContent = next.trim();
+        const sn = document.getElementById('acctSettingsName'); if (sn) sn.innerHTML = escapeHtml(next.trim()) + ' ›';
       } catch (e) { console.error(e); alert('Name could not be updated. Please try again.'); }
     };
 
@@ -9151,17 +8917,12 @@ var qrcode = function() {
       pushOverlay('settings', hideSettings);
       const u = getCurrentUser();
       if (u) {
-        // Paint authenticated data immediately, then replace it with the real
-        // users/{uid} document as soon as Firestore returns it.
-        updateDitempsSettingsDetails(u, {});
-        listenToUserProfile(u.uid);
-        getDoc(doc(db, 'users', u.uid)).then(function(snap){
-          if (!snap.exists()) return;
-          updateDitempsSettingsDetails(u, snap.data() || {});
-        }).catch(function(err){
-          console.warn('Could not read Firestore profile:', err);
-        });
-
+        document.getElementById('acctAvatar').src = getAvatarUrl(u);
+        document.getElementById('acctName').textContent = u.displayName || 'User';
+        document.getElementById('acctSettingsPhoto').src = getAvatarUrl(u);
+        document.getElementById('acctSettingsName').innerHTML = escapeHtml(u.displayName || 'User') + ' ›';
+        document.getElementById('acctSettingsEmail').textContent = u.email || '';
+        updateDitempsSettingsDetails(u);
         const since = document.getElementById('acctSince');
         if (since) {
           const t = u.metadata && u.metadata.creationTime ? new Date(u.metadata.creationTime) : null;
@@ -9178,7 +8939,6 @@ var qrcode = function() {
       showAccountTab('orders');
       loadAccountOrders();
       loadCurrentUserWishlist().then(loadAccountWishlist);
-      loadAccountProfileStats();
     }
     function hideSettings() {
       document.getElementById('settingsModal').classList.remove('active');
@@ -9610,6 +9370,9 @@ function confirmLogout() {
       const userPhoto = document.getElementById('navUserPhoto');
       const userName = document.getElementById('navUserName');
       const adminMenu = document.getElementById('menu-admin');
+      const landingSigninBtn = document.getElementById('landingSigninBtn');
+      const landingUserChip = document.getElementById('landingUserChip');
+      const landingUserPhoto = document.getElementById('landingUserPhoto');
 
       if (user) {
         if (loginBtn) loginBtn.style.display = 'none';
@@ -9620,15 +9383,16 @@ function confirmLogout() {
         }
         if (userName) userName.textContent = user.displayName || 'Account';
         if (adminMenu) adminMenu.style.display = window.isAdminUser ? '' : 'none';
-
-        // Start reading the user's Firestore profile immediately. Do not wait for
-        // saveUserData(), because a write/rules error must never prevent profile reads.
-        listenToUserProfile(user.uid);
-        listenToWallet(user.uid);
-        loadCurrentUserWishlist();
+        if (landingSigninBtn) landingSigninBtn.style.display = 'none';
+        if (landingUserChip) landingUserChip.style.display = 'grid';
+        if (landingUserPhoto) {
+          landingUserPhoto.src = getAvatarUrl(user);
+          landingUserPhoto.alt = user.displayName || 'User';
+        }
 
         try {
           await saveUserData(user);
+          listenToWallet(user.uid);
         } catch (err) {
           console.error('User data setup failed:', err);
         }
@@ -9638,14 +9402,13 @@ function confirmLogout() {
         if (userPhoto) userPhoto.src = '';
         if (userName) userName.textContent = '';
         if (adminMenu) adminMenu.style.display = 'none';
-        if (userProfileUnsub) { userProfileUnsub(); userProfileUnsub = null; }
+        if (landingSigninBtn) landingSigninBtn.style.display = '';
+        if (landingUserChip) landingUserChip.style.display = 'none';
+        const landingCoinChip = document.getElementById('landingCoinChip');
+        if (landingCoinChip) landingCoinChip.style.display = 'none';
         window.currentUserWallet = 0;
         window.currentUserPremiumUntil = 0;
         window.walletUnlockedTemplateNames = new Set();
-        wishlistCache.clear();
-        likedTemplateCache.clear();
-        updateLikeButton();
-        updateWishlistButton();
       }
     }
 
@@ -9694,6 +9457,9 @@ function confirmLogout() {
             referrals: [],
             referralCount: 0,
             wishlist: [],
+            city: '',
+            openCount: 0,
+            sessionCount: 1,
             lastLogin: serverTimestamp()
           }, { merge: true });
         } else {
@@ -9702,18 +9468,13 @@ function confirmLogout() {
           if (existing.walletBalance == null && Number.isFinite(Number(existing.coins))) {
             migration.walletBalance = Number(existing.coins);
           }
-
-          const profilePatch = {
-            email: user.email || existing.email || '',
+          tx.set(userRef, Object.assign({
+            name: user.displayName || '',
+            email: user.email || '',
+            photoURL: user.photoURL || '',
+            sessionCount: increment(1),
             lastLogin: serverTimestamp()
-          };
-          if (existing.name == null || String(existing.name).trim() === '') {
-            profilePatch.name = user.displayName || '';
-          }
-          if (existing.photoURL == null || String(existing.photoURL).trim() === '') {
-            profilePatch.photoURL = user.photoURL || '';
-          }
-          tx.set(userRef, Object.assign(profilePatch, migration), { merge: true });
+          }, migration), { merge: true });
         }
       });
 
@@ -9748,12 +9509,30 @@ function confirmLogout() {
         window.currentUserWallet = window.isAdminUser ? Infinity : wallet;
         window.currentUserPremiumUntil = data.premiumUntil || 0;
         window.walletUnlockedTemplateNames = new Set(data.walletUnlockedTemplates || []);
+        window.currentUserCity = data.city || '';
+        window.currentUserSessionCount = Number(data.sessionCount || 0);
+        window.currentUserOpenCount = Number(data.openCount || 0);
+
+        // Keep the Settings stats row (Opens/Live/Sessions) and city in sync
+        // with real Firestore data every time the user doc changes.
+        const cityEl = document.getElementById('acctSettingsCity');
+        if (cityEl) cityEl.textContent = window.currentUserCity ? window.currentUserCity + ' ›' : 'Add city ›';
+        const opensEl = document.getElementById('acctStatOpens');
+        if (opensEl) opensEl.textContent = window.currentUserOpenCount;
+        const sessionsEl = document.getElementById('acctStatSessions');
+        if (sessionsEl) sessionsEl.textContent = window.currentUserSessionCount;
 
         const navChip = document.getElementById('navCoinChip');
         if (navChip) {
           navChip.style.display = 'flex';
           navChip.innerHTML = `₹<span id="navCoinBalance">${window.isAdminUser ? '∞' : wallet}</span>`;
           navChip.title = 'Website Wallet';
+        }
+        const landingCoinChip = document.getElementById('landingCoinChip');
+        if (landingCoinChip) {
+          landingCoinChip.style.display = 'flex';
+          landingCoinChip.innerHTML = `₹<span id="landingCoinBalance">${window.isAdminUser ? '∞' : wallet}</span>`;
+          landingCoinChip.title = 'Website Wallet';
         }
         const modalBal = document.getElementById('walletModalBalance');
         if (modalBal) modalBal.textContent = window.isAdminUser ? '∞' : wallet;
@@ -9953,6 +9732,23 @@ function confirmLogout() {
         listEl.innerHTML = '<div class="empty-note">Wallet purchases could not be loaded. Check Firestore rules.</div>';
       }
     };
+
+    // ============================================================
+    // # EXPOSE TO THE REST OF THE SITE #
+    // This block lives in a <script type="module">, and modules keep
+    // their own top-level scope — anything declared here (db, doc,
+    // getCurrentUser, etc.) is invisible to the site's other, older
+    // <script> tags even though they call these same names directly.
+    // Attaching them to window is what makes those calls resolve.
+    // ============================================================
+    Object.assign(window, {
+      auth, db, provider,
+      doc, collection, query, orderBy, where,
+      setDoc, addDoc, getDoc, getDocs, onSnapshot, runTransaction,
+      increment, arrayUnion, arrayRemove, serverTimestamp,
+      getCurrentUser, deleteUser, sendEmailVerification,
+      reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider
+    });
   </script>
 
 <script id="ditemps-header-landing-behavior">
