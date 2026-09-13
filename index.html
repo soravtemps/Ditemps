@@ -7106,15 +7106,12 @@ var qrcode = function() {
 
       const buyBtn = document.getElementById('detailBuyBtn');
       buyBtn.textContent = isDirectLink ? 'Get Link' : 'Personalise';
-      buyBtn.onclick = () => {
-        if (isDirectLink) {
-          openDirectLink(item);
-        } else if (isFreeFlowFinal) {
-          openCustomizeModal(item);
-        } else {
-          openPaymentModal(effectiveItem);
-        }
-      };
+      // Always re-check payment/unlock status at click time (same as the
+      // Personalise buttons above) instead of baking isFreeFlowFinal into this
+      // closure — otherwise a payment made *after* this page rendered (wallet
+      // buy, UPI submit) would still send the user through the payment modal
+      // again until they left and re-opened this template's detail page.
+      buyBtn.onclick = () => handlePersonaliseClick(item, kind);
 
 
 
@@ -7494,6 +7491,44 @@ var qrcode = function() {
       }
     }
 
+    // Updates just the "WALLET UNLOCKED" badge + price label on the template
+    // detail page, if it's the page currently open for the template that was
+    // just paid for. This does NOT call openTemplateDetail() (that would push
+    // a duplicate overlay/history entry onto the back-button stack, re-track a
+    // view, and reload the live-preview iframe) — it only refreshes the two
+    // pieces of UI that used to stay stale ("Paid ₹X") until the page was
+    // closed and re-opened. The Buy/Personalise buttons don't need this: they
+    // already call handlePersonaliseClick(), which re-checks unlock status
+    // fresh on every click.
+    function refreshDetailPageIfOpen(name) {
+      if (!name) return;
+      if (typeof currentDetailItem === 'undefined' || !currentDetailItem || currentDetailItem.name !== name) return;
+      window.walletUnlockedTemplateNames = window.walletUnlockedTemplateNames instanceof Set ? window.walletUnlockedTemplateNames : new Set();
+      const badgesEl = document.getElementById('detailBadges');
+      if (badgesEl && !badgesEl.innerHTML.includes('WALLET UNLOCKED')) {
+        badgesEl.insertAdjacentHTML('beforeend', '<span class="badge free">WALLET UNLOCKED</span>');
+      }
+      const priceEl = document.getElementById('detailPrice');
+      if (priceEl) priceEl.innerHTML = 'FREE (Wallet Unlocked)';
+    }
+
+    // Opposite of refreshDetailPageIfOpen(): once a wallet/UPI-unlocked
+    // template's link has actually been generated, the unlock is consumed —
+    // this removes the "WALLET UNLOCKED" badge and restores the normal paid
+    // price label on the detail page if it's still open behind the customize
+    // modal. Same non-destructive approach: no openTemplateDetail() call, so
+    // no duplicate overlay/history entry, no re-tracked view.
+    function relockDetailPageIfOpen(name) {
+      if (!name) return;
+      if (typeof currentDetailItem === 'undefined' || !currentDetailItem || currentDetailItem.name !== name) return;
+      const badgesEl = document.getElementById('detailBadges');
+      if (badgesEl) badgesEl.innerHTML = badgesEl.innerHTML.replace(/\s*<span class="badge free">WALLET UNLOCKED<\/span>/, '');
+      const priceEl = document.getElementById('detailPrice');
+      if (priceEl && typeof getPriceLabel === 'function') {
+        priceEl.innerHTML = getPriceLabel(currentDetailItem, window.currentDetailKind);
+      }
+    }
+
     // Called once a purchase (wallet-only, wallet+UPI, or UPI-only) is fully
     // confirmed: persists the unlock so the template stays unlocked next time,
     // and clears any pending hold so it's no longer eligible for refund.
@@ -7505,6 +7540,7 @@ var qrcode = function() {
         window.walletUnlockedTemplateNames = new Set();
       }
       window.walletUnlockedTemplateNames.add(name);
+      refreshDetailPageIfOpen(name);
       try {
         if (window.currentUserUid) {
           const userRef = doc(db, 'users', window.currentUserUid);
@@ -8213,6 +8249,39 @@ var qrcode = function() {
         document.getElementById('openLinkBtn').href = link;
         document.getElementById('linkResult').classList.add('active');
         statusText.textContent = 'Your link is ready!';
+
+        const generatedTemplateName = currentTemplate ? currentTemplate.name : '';
+
+        // Save this exact personalized link so "My Gifts" can show which
+        // template was made and open/share/QR the REAL link — not just the
+        // template's generic URL.
+        if (window.currentUserUid && generatedTemplateName) {
+          try {
+            await addDoc(collection(db, 'myGifts'), {
+              uid: window.currentUserUid,
+              templateName: generatedTemplateName,
+              link,
+              createdAt: serverTimestamp()
+            });
+            if (typeof loadAccountOrders === 'function') loadAccountOrders();
+          } catch (e) { console.warn('Could not save gift record:', e); }
+        }
+
+        // One payment = one link. Once the link for a wallet/UPI-unlocked
+        // template has actually been generated (this point — after every
+        // required field passed validation and the card/order was saved),
+        // consume the unlock so the same payment can't be used to generate a
+        // second link. Free templates, admin access, and an active Premium
+        // subscription never get added to walletUnlockedTemplateNames, so
+        // they're unaffected by this.
+        if (generatedTemplateName && window.walletUnlockedTemplateNames instanceof Set && window.walletUnlockedTemplateNames.has(generatedTemplateName)) {
+          window.walletUnlockedTemplateNames.delete(generatedTemplateName);
+          relockDetailPageIfOpen(generatedTemplateName);
+          if (window.currentUserUid) {
+            setDoc(doc(db, 'users', window.currentUserUid), { walletUnlockedTemplates: arrayRemove(generatedTemplateName) }, { merge: true })
+              .catch(e => console.warn('Could not persist re-lock:', e));
+          }
+        }
       } catch (err) {
         console.error(err);
         statusText.textContent = 'Link could not be generated, please try again.';
@@ -8632,13 +8701,18 @@ var qrcode = function() {
       } catch (e) { return null; }
     }
 
+    // "My Gifts" now reads from the `myGifts` collection — one doc per link
+    // the user has actually generated (written by generateTemplateLink()) —
+    // instead of the `orders` collection (which only has payment metadata
+    // and the template's generic URL, not the real personalized link). This
+    // is what lets each card show and share/QR the exact link that was made.
     async function loadAccountOrders() {
       const list = document.getElementById('settingsOrdersList');
       if (!list || !window.currentUserUid) return;
       list.innerHTML = '<div class="empty-note">Loading...</div>';
       try {
         let rows;
-        const q = query(collection(db, 'orders'), where('buyerUid', '==', window.currentUserUid));
+        const q = query(collection(db, 'myGifts'), where('uid', '==', window.currentUserUid));
         const snap = await getDocs(q);
         rows = [];
         snap.forEach(ds => rows.push(ds.data() || {}));
@@ -8648,30 +8722,42 @@ var qrcode = function() {
           return tb - ta;
         });
         const gCount = document.getElementById('acctStatGifts'); if (gCount) gCount.textContent = rows.length;
-        // Ditemps gift links never expire, so every purchased gift counts as "Live".
+        // Ditemps gift links never expire, so every generated gift counts as "Live".
         const liveCount = document.getElementById('acctStatLive'); if (liveCount) liveCount.textContent = rows.length;
-        if (!rows.length) { list.innerHTML = '<div class="empty-note">You have not purchased any gifts or templates yet.</div>'; return; }
+        if (!rows.length) { list.innerHTML = '<div class="empty-note">You have not created any gift links yet.</div>'; return; }
         list.innerHTML = rows.map(d => {
           const found = findTemplateByName(d.templateName);
           const img = found ? found.item.image : '';
           const category = found ? found.item.category : 'Template';
           const time = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleDateString() : '';
-          const link = found ? found.item.downloadUrl : '';
+          const link = d.link || (found ? found.item.downloadUrl : '');
           return `<div class="gift-card-new">
             <img class="gift-card-thumb" src="${escapeHtml(img)}" alt="" onerror="this.style.visibility='hidden'">
             <div class="gift-card-body">
               <h5>${escapeHtml(d.templateName || 'Template')}</h5>
               <p>${escapeHtml(category)}${time ? ' · ' + escapeHtml(time) : ''}</p>
-              <span class="gift-status-chip">Purchased</span>
+              <span class="gift-status-chip">Created</span>
               <div class="gift-card-actions">
                 ${link ? `<button class="primary" onclick="trackAndOpenGift(decodeURIComponent('${encodeURIComponent(link)}'))">Open</button>` : ''}
+                ${link ? `<button onclick="window.openQrForGiftLink(decodeURIComponent('${encodeURIComponent(link)}'))">QR</button>` : ''}
                 <button onclick="shareGiftLink(decodeURIComponent('${encodeURIComponent(link || '')}'),decodeURIComponent('${encodeURIComponent(d.templateName || 'Template')}'))">Share</button>
               </div>
             </div>
           </div>`;
         }).join('');
-      } catch (e) { console.error(e); list.innerHTML = '<div class="empty-note">Orders could not be loaded. Please check Firestore rules.</div>'; }
+      } catch (e) { console.error(e); list.innerHTML = '<div class="empty-note">Gifts could not be loaded. Please check Firestore rules.</div>'; }
     }
+
+    // Opens the existing QR-shape picker for a specific "My Gifts" link
+    // (rather than whatever is currently in the customize modal's link
+    // field), by loading that link into the same hidden field the QR modal
+    // already reads from.
+    window.openQrForGiftLink = function (link) {
+      if (!link) return;
+      const input = document.getElementById('finalLinkInput');
+      if (input) input.value = link;
+      openQrShapeModal();
+    };
 
     // Real "Opens" counter: increments in Firestore each time the account
     // owner actually opens one of their purchased gift links.
@@ -9814,6 +9900,7 @@ function confirmLogout() {
         }
         if (!(window.walletUnlockedTemplateNames instanceof Set)) window.walletUnlockedTemplateNames = new Set();
         window.walletUnlockedTemplateNames.add(item.name);
+        refreshDetailPageIfOpen(item.name);
         if (statusEl) {
           statusEl.style.color='var(--accent-gold)';
           statusEl.textContent = window.isAdminUser ? 'Admin access: template unlocked.' : (alreadyUnlocked ? 'Already unlocked — opening template…' : `✅ ₹${walletCost} deducted from website wallet.`);
