@@ -7470,6 +7470,51 @@ var qrcode = function() {
     const UPI_PAYEE_NAME = "Ditemps";
     let currentPaymentTemplate = null;
 
+    // Tracks a wallet deduction that hasn't been "confirmed" by a completed
+    // purchase yet (partial wallet payment still waiting on UPI + UTR). If the
+    // payment modal gets closed before the purchase completes, this amount is
+    // refunded back to the wallet so money is never lost without a purchase.
+    let pendingWalletHold = null; // { amount } | null
+
+    async function refundPendingWalletHold() {
+      if (!pendingWalletHold || pendingWalletHold.amount <= 0) { pendingWalletHold = null; return; }
+      const hold = pendingWalletHold;
+      pendingWalletHold = null;
+      try {
+        if (!window.isAdminUser && window.currentUserUid) {
+          const userRef = doc(db, 'users', window.currentUserUid);
+          await setDoc(userRef, { walletBalance: increment(hold.amount) }, { merge: true });
+        }
+        window.currentUserWallet = window.isAdminUser
+          ? Infinity
+          : Number(window.currentUserWallet || 0) + hold.amount;
+        updateWalletApplyButton();
+      } catch (e) {
+        console.error('Wallet refund failed', e);
+      }
+    }
+
+    // Called once a purchase (wallet-only, wallet+UPI, or UPI-only) is fully
+    // confirmed: persists the unlock so the template stays unlocked next time,
+    // and clears any pending hold so it's no longer eligible for refund.
+    async function markTemplatePurchased() {
+      pendingWalletHold = null;
+      const name = currentPaymentTemplate ? currentPaymentTemplate.name : null;
+      if (!name) return;
+      if (!(window.walletUnlockedTemplateNames instanceof Set)) {
+        window.walletUnlockedTemplateNames = new Set();
+      }
+      window.walletUnlockedTemplateNames.add(name);
+      try {
+        if (window.currentUserUid) {
+          const userRef = doc(db, 'users', window.currentUserUid);
+          await setDoc(userRef, { walletUnlockedTemplates: arrayUnion(name) }, { merge: true });
+        }
+      } catch (e) {
+        console.error('Could not persist purchase unlock', e);
+      }
+    }
+
     function openPaymentModal(item) {
       currentPaymentTemplate = item;
       document.getElementById('paymentTemplateName').textContent = item.name;
@@ -7489,6 +7534,9 @@ var qrcode = function() {
 
     function hidePaymentModal() {
       document.getElementById('paymentModal').classList.remove('active');
+      // Modal closing without a completed purchase = refund any wallet
+      // amount that was deducted but never turned into a finished order.
+      refundPendingWalletHold();
     }
 
     function closePaymentModal() {
@@ -7606,11 +7654,10 @@ var qrcode = function() {
           : Math.max(0, Number(window.currentUserWallet || 0) - walletUsed);
 
         if (remainingAmount <= 0) {
-          // Full wallet payment: the template is now unlocked.
-          if (!(window.walletUnlockedTemplateNames instanceof Set)) {
-            window.walletUnlockedTemplateNames = new Set();
-          }
-          window.walletUnlockedTemplateNames.add(currentPaymentTemplate.name);
+          // Full wallet payment: the template is now unlocked. No amount is
+          // left pending, so there's nothing to hold/refund.
+          pendingWalletHold = null;
+          await markTemplatePurchased();
 
           await saveOrderToFirestore({
             templateName: currentPaymentTemplate.name,
@@ -7636,7 +7683,12 @@ var qrcode = function() {
           return;
         }
 
-        // Partial wallet payment: reduce the amount that the user must pay by UPI.
+        // Partial wallet payment: money has already left the wallet, but the
+        // purchase isn't done yet — the user still has to pay ₹remainingAmount
+        // by UPI and submit it. Remember this amount so that if the modal is
+        // closed before that happens, it gets refunded instead of just lost.
+        pendingWalletHold = { amount: walletUsed };
+
         currentPaymentTemplate = Object.assign({}, currentPaymentTemplate, {
           price: `₹${remainingAmount}`
         });
@@ -7714,8 +7766,13 @@ var qrcode = function() {
 
       const proceedToCustomize = () => {
         endPrepTask();
-        closePaymentModal();
-        openCustomizeModal(currentPaymentTemplate);
+        // Payment (any wallet portion + this UPI amount) is now fully
+        // confirmed: persist the unlock and clear the pending wallet hold so
+        // it's no longer treated as an abandoned/refundable payment.
+        markTemplatePurchased().finally(() => {
+          closePaymentModal();
+          openCustomizeModal(currentPaymentTemplate);
+        });
       };
 
       if (typeof saveOrderToFirestore === 'function') {
