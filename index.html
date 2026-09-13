@@ -9117,15 +9117,25 @@ function confirmLogout() {
           return;
         }
 
-        // Mobile browsers are more reliable with redirect than popup.
-        if (isMobile) {
-          await signInWithRedirect(auth, provider);
-          return;
-        }
-
-        const result = await signInWithPopup(auth, provider);
-        if (result && result.user) {
-          await saveUserData(result.user);
+        // Use popup on all devices — signInWithRedirect is unreliable on
+        // modern mobile browsers because Chrome/Safari increasingly block
+        // the third-party storage the redirect flow needs to restore the
+        // session (you pick an account, it bounces back, but you're never
+        // actually signed in). Only fall back to redirect if the popup
+        // itself genuinely can't open.
+        try {
+          const result = await signInWithPopup(auth, provider);
+          if (result && result.user) {
+            await saveUserData(result.user);
+          }
+        } catch (popupErr) {
+          const code = popupErr && popupErr.code;
+          if (code === 'auth/popup-blocked' || code === 'auth/operation-not-supported-in-this-environment') {
+            if (status) status.textContent = 'Redirecting to Google…';
+            await signInWithRedirect(auth, provider);
+            return;
+          }
+          throw popupErr;
         }
       } catch (err) {
         console.error('Google login failed:', err);
