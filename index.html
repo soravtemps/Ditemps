@@ -2778,6 +2778,10 @@ body:has(#settingsModal.active) .refer-fab {
   font-weight: 700;
   font-size: 15px !important;
 }
+.connected-status.not-connected {
+  color: #9C93B5 !important;
+  font-weight: 600;
+}
 .ditemps-action-row {
   cursor: pointer;
   font-size: 16px;
@@ -4554,7 +4558,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
         <div class="ditemps-settings-profile-head">
           <div class="acct-photo-wrap">
             <img id="acctSettingsPhoto" src="" alt="Profile">
-            <button class="acct-photo-cam" onclick="alert('Your profile photo comes from your Google account and cannot be changed here.')">📷</button>
+            <button class="acct-photo-cam" id="acctPhotoCamBtn" onclick="handleAvatarCamClick()">📷</button>
           </div>
           <div class="ditemps-settings-name" id="acctSettingsHeadName">User</div>
           <div class="ditemps-settings-email" id="acctSettingsHeadEmail"></div>
@@ -4579,7 +4583,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
           <div class="ditemps-settings-card">
             <div class="ditemps-setting-row">
               <span>Email</span>
-              <span class="ditemps-setting-value d-flex-setting"><span id="acctSettingsEmail">—</span><span class="verified-pill" id="acctSettingsVerified" style="display:none;">Verified</span></span>
+              <span class="ditemps-setting-value d-flex-setting"><span id="acctSettingsEmail">—</span><span class="verified-pill" id="acctSettingsVerified" style="display:none;">Verified</span><button class="ditemps-setting-value clickable" id="acctVerifyBtn" style="display:none;" onclick="sendVerificationEmail()">Verify ›</button></span>
             </div>
             <div class="ditemps-setting-row">
               <span>Member since</span>
@@ -4650,10 +4654,14 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
 
         <div class="ditemps-settings-section">
           <div class="ditemps-settings-title">CONNECTED ACCOUNTS</div>
-          <div class="ditemps-settings-card">
+          <div class="ditemps-settings-card" id="acctConnectedCard">
             <div class="ditemps-setting-row">
               <div class="google-connected-label"><span class="google-g">G</span><span>Google</span></div>
-              <span class="connected-status">● Connected</span>
+              <span class="connected-status" id="acctConnectedGoogle">Not connected</span>
+            </div>
+            <div class="ditemps-setting-row">
+              <div class="google-connected-label"><span>✉️</span><span>Email &amp; Password</span></div>
+              <span class="connected-status" id="acctConnectedEmail">Not connected</span>
             </div>
           </div>
         </div>
@@ -8726,7 +8734,23 @@ var qrcode = function() {
       if (emailEl) emailEl.textContent = email;
 
       const verified = document.getElementById('acctSettingsVerified');
-      if (verified) verified.style.display = (u && u.emailVerified) || (u && (u.providerData || []).some(p => p.providerId === 'google.com')) ? 'inline-block' : 'none';
+      const verifyBtn = document.getElementById('acctVerifyBtn');
+      const isGoogleAccount = !!(u && (u.providerData || []).some(p => p.providerId === 'google.com'));
+      const isEmailVerified = !!(u && u.emailVerified);
+      if (verified) verified.style.display = (isEmailVerified || isGoogleAccount) ? 'inline-block' : 'none';
+      if (verifyBtn) verifyBtn.style.display = (!isGoogleAccount && !isEmailVerified) ? 'inline-block' : 'none';
+
+      const googleStatus = document.getElementById('acctConnectedGoogle');
+      const emailStatus = document.getElementById('acctConnectedEmail');
+      const isEmailAccount = !!(u && (u.providerData || []).some(p => p.providerId === 'password'));
+      if (googleStatus) {
+        googleStatus.textContent = isGoogleAccount ? '● Connected' : 'Not connected';
+        googleStatus.classList.toggle('not-connected', !isGoogleAccount);
+      }
+      if (emailStatus) {
+        emailStatus.textContent = isEmailAccount ? '● Connected' : 'Not connected';
+        emailStatus.classList.toggle('not-connected', !isEmailAccount);
+      }
 
       const wallet = document.getElementById('acctSettingsWallet');
       if (wallet) wallet.textContent = '₹' + (window.isAdminUser ? '∞' : Number(window.currentUserWallet || 0));
@@ -8755,13 +8779,63 @@ var qrcode = function() {
       const ok = confirm('Delete your Ditemps account? This action cannot be undone.');
       if (!ok) return;
       try {
-        await (typeof deleteUser === 'function' ? deleteUser(u) : u.delete());
+        await deleteUser(u);
         localStorage.removeItem('ditemps_city');
         alert('Your account has been deleted.');
         hideSettings();
       } catch (e) {
         console.error(e);
-        alert('Account could not be deleted. Please sign in again and try once more.');
+        if (e && e.code === 'auth/requires-recent-login') {
+          const retry = confirm('For security, please sign in again before deleting your account. Sign in now?');
+          if (retry) {
+            try {
+              const isGoogle = (u.providerData || []).some(p => p.providerId === 'google.com');
+              if (isGoogle) {
+                await reauthenticateWithPopup(u, provider);
+              } else {
+                const pwd = prompt('Enter your password to confirm account deletion:');
+                if (!pwd) return;
+                const cred = EmailAuthProvider.credential(u.email, pwd);
+                await reauthenticateWithCredential(u, cred);
+              }
+              await deleteUser(u);
+              localStorage.removeItem('ditemps_city');
+              alert('Your account has been deleted.');
+              hideSettings();
+            } catch (e2) {
+              console.error(e2);
+              alert('Account could not be deleted. Please try again.');
+            }
+          }
+        } else {
+          alert('Account could not be deleted. Please sign in again and try once more.');
+        }
+      }
+    };
+
+    window.handleAvatarCamClick = function () {
+      const u = getCurrentUser();
+      const isGoogle = !!(u && (u.providerData || []).some(p => p.providerId === 'google.com'));
+      if (isGoogle) {
+        alert('Your profile photo comes from your Google account and cannot be changed here.');
+      } else {
+        alert('Custom photo upload isn\'t available yet — your avatar is generated from your name for now.');
+      }
+    };
+
+    window.sendVerificationEmail = async function () {
+      const u = getCurrentUser();
+      if (!u) return;
+      const btn = document.getElementById('acctVerifyBtn');
+      if (btn) btn.disabled = true;
+      try {
+        await sendEmailVerification(u);
+        alert('Verification email sent — please check your inbox.');
+      } catch (e) {
+        console.error(e);
+        alert('Could not send verification email. Please try again shortly.');
+      } finally {
+        if (btn) btn.disabled = false;
       }
     };
 
@@ -9012,7 +9086,8 @@ function confirmLogout() {
     import {
       getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
       onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, browserSessionPersistence,
-      updateProfile, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail
+      updateProfile, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendPasswordResetEmail,
+      sendEmailVerification, deleteUser, reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider
     } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
     import {
       getFirestore, doc, collection, query, orderBy, where,
