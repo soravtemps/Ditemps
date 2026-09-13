@@ -8504,26 +8504,69 @@ var qrcode = function() {
 
     async function likeCurrentTemplate() {
       if (!currentDetailItem) return;
+      if (!window.isUserLoggedIn || !window.currentUserUid) {
+        openLogin();
+        return;
+      }
+
       const name = currentDetailItem.name;
-      const localKey = 'ditemps_liked_' + encodeURIComponent(name);
-      if (likedTemplateCache.has(name) || localStorage.getItem(localKey)) return;
+      const userRef = doc(db, 'users', window.currentUserUid);
+      const statsRef = doc(db, 'templateStats', encodeURIComponent(name));
+
       try {
-        const statsRef = doc(db, 'templateStats', encodeURIComponent(name));
-        await setDoc(statsRef, { name, likes: increment(1), updatedAt: serverTimestamp() }, { merge: true });
-        localStorage.setItem(localKey, '1');
-        likedTemplateCache.add(name);
-        const current = templateStatsCache.get(name) || { views: 0, likes: 0 };
-        current.likes += 1;
-        templateStatsCache.set(name, current);
+        let likedAfter = false;
+        await runTransaction(db, async (tx) => {
+          const userSnap = await tx.get(userRef);
+          const statsSnap = await tx.get(statsRef);
+
+          const userData = userSnap.exists() ? (userSnap.data() || {}) : {};
+          const liked = Array.isArray(userData.likedTemplates) ? userData.likedTemplates : [];
+          const alreadyLiked = liked.includes(name);
+
+          const statsData = statsSnap.exists() ? (statsSnap.data() || {}) : {};
+          const currentLikes = Math.max(0, Number(statsData.likes || 0));
+
+          if (alreadyLiked) {
+            tx.set(userRef, { likedTemplates: arrayRemove(name) }, { merge: true });
+            tx.set(statsRef, {
+              name,
+              likes: Math.max(0, currentLikes - 1),
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+            likedAfter = false;
+          } else {
+            tx.set(userRef, { likedTemplates: arrayUnion(name) }, { merge: true });
+            tx.set(statsRef, {
+              name,
+              likes: currentLikes + 1,
+              updatedAt: serverTimestamp()
+            }, { merge: true });
+            likedAfter = true;
+          }
+        });
+
+        if (likedAfter) likedTemplateCache.add(name);
+        else likedTemplateCache.delete(name);
+
+        const fresh = await getDoc(statsRef);
+        const data = fresh.exists() ? (fresh.data() || {}) : {};
+        templateStatsCache.set(name, {
+          views: Number(data.views || 0),
+          likes: Number(data.likes || 0)
+        });
+
         updateRenderedTemplateStats(currentDetailItem);
         updateLikeButton();
-      } catch (e) { console.error(e); alert('Like could not be saved. Please try again.'); }
+      } catch (e) {
+        console.error('Firebase like update failed:', e);
+        alert('Like could not be saved. Please try again.');
+      }
     }
 
     function updateLikeButton() {
       const btn = document.getElementById('detailLikeBtn');
       if (!btn || !currentDetailItem) return;
-      const liked = likedTemplateCache.has(currentDetailItem.name) || localStorage.getItem('ditemps_liked_' + encodeURIComponent(currentDetailItem.name));
+      const liked = likedTemplateCache.has(currentDetailItem.name);
       btn.classList.toggle('active', !!liked);
       btn.textContent = liked ? '♥ Liked' : '♡ Like';
     }
@@ -8557,10 +8600,18 @@ var qrcode = function() {
       try {
         const snap = await getDoc(doc(db, 'users', window.currentUserUid));
         const data = snap.exists() ? (snap.data() || {}) : {};
+
         wishlistCache.clear();
         (Array.isArray(data.wishlist) ? data.wishlist : []).forEach(x => wishlistCache.add(x));
+
+        likedTemplateCache.clear();
+        (Array.isArray(data.likedTemplates) ? data.likedTemplates : []).forEach(x => likedTemplateCache.add(x));
+
         updateWishlistButton();
-      } catch (e) { console.warn('Wishlist load failed:', e); }
+        updateLikeButton();
+      } catch (e) {
+        console.warn('Firebase wishlist/likes load failed:', e);
+      }
     }
 
     // Looks up a template's image/category/price by name from the
@@ -8619,6 +8670,60 @@ var qrcode = function() {
       else if (link) { navigator.clipboard && navigator.clipboard.writeText(link).catch(() => {}); alert('Link copied!'); }
     };
 
+    function firstNumber(obj, keys, fallback) {
+      for (const key of keys) {
+        if (obj && obj[key] != null && obj[key] !== '') {
+          const n = Number(obj[key]);
+          if (Number.isFinite(n)) return n;
+        }
+      }
+      return fallback;
+    }
+
+    async function loadAccountProfileStats() {
+      if (!window.currentUserUid) return;
+      try {
+        const [userSnap, ordersSnap] = await Promise.all([
+          getDoc(doc(db, 'users', window.currentUserUid)),
+          getDocs(query(collection(db, 'orders'), where('buyerUid', '==', window.currentUserUid)))
+        ]);
+
+        const userData = userSnap.exists() ? (userSnap.data() || {}) : {};
+        const orders = [];
+        ordersSnap.forEach(ds => orders.push(ds.data() || {}));
+
+        // Prefer explicit Firebase user-level stats when the project has them.
+        const stats = userData.stats && typeof userData.stats === 'object' ? userData.stats : {};
+        const gifts = firstNumber(stats, ['gifts', 'giftCount'], orders.length);
+
+        let opens = firstNumber(stats, ['opens', 'openCount'], NaN);
+        let live = firstNumber(stats, ['live', 'liveCount'], NaN);
+        let sessions = firstNumber(stats, ['sessions', 'sessionCount'], NaN);
+
+        // Otherwise derive only from real order fields that exist.
+        if (!Number.isFinite(opens)) {
+          opens = orders.reduce((sum, o) => sum + firstNumber(o, ['opens', 'openCount', 'views'], 0), 0);
+        }
+        if (!Number.isFinite(live)) {
+          live = orders.reduce((sum, o) => sum + ((o.isLive === true || String(o.status || '').toLowerCase() === 'live') ? 1 : 0), 0);
+        }
+        if (!Number.isFinite(sessions)) {
+          sessions = orders.reduce((sum, o) => sum + firstNumber(o, ['sessions', 'sessionCount'], 0), 0);
+        }
+
+        const set = (id, value) => {
+          const el = document.getElementById(id);
+          if (el) el.textContent = String(Math.max(0, Math.floor(Number(value) || 0)));
+        };
+        set('acctStatGifts', gifts);
+        set('acctStatOpens', opens);
+        set('acctStatLive', live);
+        set('acctStatSessions', sessions);
+      } catch (e) {
+        console.warn('Firebase profile stats unavailable:', e);
+      }
+    }
+
     async function loadAccountWishlist() {
       const list = document.getElementById('settingsWishlistList');
       if (!list || !window.currentUserUid) return;
@@ -8652,6 +8757,7 @@ var qrcode = function() {
         wishlistCache.delete(name);
         updateWishlistButton();
         loadAccountWishlist();
+        loadAccountProfileStats();
       } catch (e) { console.error(e); alert('Wishlist update failed. Please try again.'); }
     };
 
@@ -8729,34 +8835,62 @@ var qrcode = function() {
       });
     }
 
-    window.editAccountCity = function () {
-      const current = (localStorage.getItem('ditemps_city') || '').trim();
-      const next = prompt('Enter your city:', current);
+    window.editAccountCity = async function () {
+      if (!window.currentUserUid) return;
+      const currentEl = document.getElementById('acctSettingsCity');
+      const current = currentEl ? currentEl.textContent.replace(/\\s*›\\s*$/, '').trim() : '';
+      const next = prompt('Enter your city:', current === 'Add city' ? '' : current);
       if (next === null) return;
       const value = next.trim();
-      if (value) localStorage.setItem('ditemps_city', value);
-      else localStorage.removeItem('ditemps_city');
-      const el = document.getElementById('acctSettingsCity');
-      if (el) el.textContent = value ? value + ' ›' : 'Add city ›';
+      try {
+        await setDoc(doc(db, 'users', window.currentUserUid), { city: value }, { merge: true });
+      } catch (e) {
+        console.error(e);
+        alert('City could not be saved. Please try again.');
+      }
     };
 
-    function updateDitempsSettingsDetails(u) {
-      const name = u && u.displayName ? u.displayName : 'User';
-      const email = u && u.email ? u.email : '—';
+    function updateDitempsSettingsDetails(u, profileData) {
+      const data = profileData || {};
+      const name = String(data.name || (u && u.displayName) || 'User').trim() || 'User';
+      const email = String(data.email || (u && u.email) || '—').trim() || '—';
+      const photoURL = String(data.photoURL || (u && u.photoURL) || '').trim();
 
       const headName = document.getElementById('acctSettingsHeadName');
       const headEmail = document.getElementById('acctSettingsHeadEmail');
+      const photo = document.getElementById('acctSettingsPhoto');
+      const topPhoto = document.getElementById('acctAvatar');
+      const topName = document.getElementById('acctName');
+
       if (headName) headName.textContent = name;
       if (headEmail) headEmail.textContent = email;
+      if (topName) topName.textContent = name;
 
-      const city = localStorage.getItem('ditemps_city') || '';
+      const avatarUser = Object.assign({}, u || {}, { displayName: name, email: email, photoURL: photoURL || (u && u.photoURL) || '' });
+      const avatarUrl = getAvatarUrl(avatarUser);
+      if (photo) {
+        photo.onerror = function(){ this.onerror = null; this.src = getAvatarUrl({displayName:name, email:email}); };
+        photo.src = avatarUrl;
+      }
+      if (topPhoto) {
+        topPhoto.onerror = function(){ this.onerror = null; this.src = getAvatarUrl({displayName:name, email:email}); };
+        topPhoto.src = avatarUrl;
+      }
+
+      const city = String(data.city || '').trim();
       const cityEl = document.getElementById('acctSettingsCity');
       if (cityEl) cityEl.textContent = city ? city + ' ›' : 'Add city ›';
 
       const member = document.getElementById('acctSettingsMemberSince');
-      const since = document.getElementById('acctSince');
       if (member) {
-        const t = u && u.metadata && u.metadata.creationTime ? new Date(u.metadata.creationTime) : null;
+        const rawCreated = data.createdAt || data.memberSince || null;
+        let t = null;
+        if (rawCreated && typeof rawCreated.toDate === 'function') t = rawCreated.toDate();
+        else if (rawCreated && typeof rawCreated.toMillis === 'function') t = new Date(rawCreated.toMillis());
+        else if (rawCreated) t = new Date(rawCreated);
+        if (!t || Number.isNaN(t.getTime())) {
+          t = u && u.metadata && u.metadata.creationTime ? new Date(u.metadata.creationTime) : null;
+        }
         member.textContent = t ? t.toLocaleDateString(undefined, {month:'long', year:'numeric'}) : '—';
       }
 
@@ -8782,13 +8916,56 @@ var qrcode = function() {
         emailStatus.classList.toggle('not-connected', !isEmailAccount);
       }
 
+      const walletValue = Number(data.walletBalance != null ? data.walletBalance : (window.currentUserWallet || 0));
       const wallet = document.getElementById('acctSettingsWallet');
-      if (wallet) wallet.textContent = '₹' + (window.isAdminUser ? '∞' : Number(window.currentUserWallet || 0));
+      if (wallet) wallet.textContent = '₹' + (window.isAdminUser ? '∞' : walletValue);
 
       const ref = document.getElementById('acctSettingsReferral');
-      if (ref) ref.textContent = window.currentUserUid ? String(window.currentUserUid).slice(-8).toUpperCase() : '—';
+      if (ref) {
+        ref.textContent = data.referralCode ? String(data.referralCode) :
+          (window.currentUserUid ? String(window.currentUserUid).slice(-8).toUpperCase() : '—');
+      }
 
       loadDitempsSettingsToggles();
+    }
+
+    let userProfileUnsub = null;
+    function listenToUserProfile(uid) {
+      if (userProfileUnsub) { userProfileUnsub(); userProfileUnsub = null; }
+      if (!uid) return;
+
+      userProfileUnsub = onSnapshot(doc(db, 'users', uid), (snap) => {
+        const data = snap.exists() ? (snap.data() || {}) : {};
+        const u = getCurrentUser();
+
+        updateDitempsSettingsDetails(u, data);
+
+        // Keep the authenticated user's visible name/photo in sync with Firestore.
+        const firestoreName = String(data.name || '').trim();
+        const firestorePhoto = String(data.photoURL || '').trim();
+        const navName = document.getElementById('navUserName');
+        const navPhoto = document.getElementById('navUserPhoto');
+        if (navName) navName.textContent = firestoreName || (u && u.displayName) || 'Account';
+        if (navPhoto) {
+          navPhoto.onerror = function(){ this.onerror = null; this.src = getAvatarUrl({displayName:firestoreName || (u && u.displayName) || 'User', email:(u && u.email) || ''}); };
+          navPhoto.src = getAvatarUrl({displayName:firestoreName || (u && u.displayName) || 'User', email:(u && u.email) || '', photoURL:firestorePhoto || (u && u.photoURL) || ''});
+        }
+
+        const wallet = Number(data.walletBalance || 0);
+        const profileBal = document.getElementById('profileWalletBalance');
+        if (profileBal) profileBal.textContent = window.isAdminUser ? '∞' : wallet;
+        const acctBal = document.getElementById('acctSettingsWallet');
+        if (acctBal) acctBal.textContent = '₹' + (window.isAdminUser ? '∞' : wallet);
+
+        wishlistCache.clear();
+        (Array.isArray(data.wishlist) ? data.wishlist : []).forEach(x => wishlistCache.add(x));
+        likedTemplateCache.clear();
+        (Array.isArray(data.likedTemplates) ? data.likedTemplates : []).forEach(x => likedTemplateCache.add(x));
+        updateWishlistButton();
+        updateLikeButton();
+
+        loadAccountWishlist();
+      }, (err) => console.warn('Firebase user profile listener failed:', err));
     }
 
     const DITEMPS_SUPPORT_EMAIL = 'ditempsofficial@gmail.com';
@@ -8938,7 +9115,12 @@ var qrcode = function() {
     function getAvatarUrl(user) {
       if (user && user.photoURL) return user.photoURL;
       const name = (user && (user.displayName || user.email)) || 'User';
-      return 'https://ui-avatars.com/api/?background=C8385A&color=fff&bold=true&name=' + encodeURIComponent(name);
+      const initials = name.trim().split(/\\s+/).map(function(p){ return p.charAt(0); }).join('').slice(0,2).toUpperCase() || 'U';
+      const svg = '<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160">' +
+        '<rect width="160" height="160" rx="80" fill="#f1f1f3"/>' +
+        '<text x="80" y="96" text-anchor="middle" font-family="Arial,sans-serif" font-size="58" font-weight="700" fill="#c22a63">' +
+        initials.replace(/[&<>"]/g, '') + '</text></svg>';
+      return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
     }
 
     function goHomeFromAccount() {
@@ -8953,10 +9135,12 @@ var qrcode = function() {
       const next = prompt('Enter your new name:', u.displayName || '');
       if (!next || !next.trim() || next.trim() === u.displayName) return;
       try {
-        await updateProfile(u, { displayName: next.trim() });
-        document.getElementById('acctName').textContent = next.trim();
-        const hn = document.getElementById('acctSettingsHeadName'); if (hn) hn.textContent = next.trim();
-        const sn = document.getElementById('acctSettingsName'); if (sn) sn.innerHTML = escapeHtml(next.trim()) + ' ›';
+        const value = next.trim();
+        await updateProfile(u, { displayName: value });
+        await setDoc(doc(db, 'users', u.uid), { name: value }, { merge: true });
+        document.getElementById('acctName').textContent = value;
+        const hn = document.getElementById('acctSettingsHeadName'); if (hn) hn.textContent = value;
+        const sn = document.getElementById('acctSettingsName'); if (sn) sn.textContent = value + ' ›';
       } catch (e) { console.error(e); alert('Name could not be updated. Please try again.'); }
     };
 
@@ -8967,12 +9151,9 @@ var qrcode = function() {
       pushOverlay('settings', hideSettings);
       const u = getCurrentUser();
       if (u) {
-        document.getElementById('acctAvatar').src = getAvatarUrl(u);
-        document.getElementById('acctName').textContent = u.displayName || 'User';
-        document.getElementById('acctSettingsPhoto').src = getAvatarUrl(u);
-        document.getElementById('acctSettingsName').innerHTML = escapeHtml(u.displayName || 'User') + ' ›';
-        document.getElementById('acctSettingsEmail').textContent = u.email || '';
-        updateDitempsSettingsDetails(u);
+        updateDitempsSettingsDetails(u, {});
+        listenToUserProfile(u.uid);
+
         const since = document.getElementById('acctSince');
         if (since) {
           const t = u.metadata && u.metadata.creationTime ? new Date(u.metadata.creationTime) : null;
@@ -8989,6 +9170,7 @@ var qrcode = function() {
       showAccountTab('orders');
       loadAccountOrders();
       loadCurrentUserWishlist().then(loadAccountWishlist);
+      loadAccountProfileStats();
     }
     function hideSettings() {
       document.getElementById('settingsModal').classList.remove('active');
@@ -9434,6 +9616,8 @@ function confirmLogout() {
         try {
           await saveUserData(user);
           listenToWallet(user.uid);
+          listenToUserProfile(user.uid);
+          loadCurrentUserWishlist();
         } catch (err) {
           console.error('User data setup failed:', err);
         }
@@ -9443,9 +9627,14 @@ function confirmLogout() {
         if (userPhoto) userPhoto.src = '';
         if (userName) userName.textContent = '';
         if (adminMenu) adminMenu.style.display = 'none';
+        if (userProfileUnsub) { userProfileUnsub(); userProfileUnsub = null; }
         window.currentUserWallet = 0;
         window.currentUserPremiumUntil = 0;
         window.walletUnlockedTemplateNames = new Set();
+        wishlistCache.clear();
+        likedTemplateCache.clear();
+        updateLikeButton();
+        updateWishlistButton();
       }
     }
 
@@ -9502,12 +9691,18 @@ function confirmLogout() {
           if (existing.walletBalance == null && Number.isFinite(Number(existing.coins))) {
             migration.walletBalance = Number(existing.coins);
           }
-          tx.set(userRef, Object.assign({
-            name: user.displayName || '',
-            email: user.email || '',
-            photoURL: user.photoURL || '',
+
+          const profilePatch = {
+            email: user.email || existing.email || '',
             lastLogin: serverTimestamp()
-          }, migration), { merge: true });
+          };
+          if (existing.name == null || String(existing.name).trim() === '') {
+            profilePatch.name = user.displayName || '';
+          }
+          if (existing.photoURL == null || String(existing.photoURL).trim() === '') {
+            profilePatch.photoURL = user.photoURL || '';
+          }
+          tx.set(userRef, Object.assign(profilePatch, migration), { merge: true });
         }
       });
 
