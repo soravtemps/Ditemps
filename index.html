@@ -8539,20 +8539,10 @@ var qrcode = function() {
       list.innerHTML = '<div class="empty-note">Loading...</div>';
       try {
         let rows;
-        if (DEMO_MODE) {
-          // Demo mode never queries Firestore — a couple of sample
-          // "gifts" so the My Gifts tab isn't empty while previewing.
-          const fakeTime = { toMillis: () => Date.now(), toDate: () => new Date() };
-          rows = [
-            { templateName: 'Pls Accept The Gift', price: 'Free', createdAt: fakeTime },
-            { templateName: 'Cute Diary Surprise', price: 'Free', createdAt: fakeTime }
-          ];
-        } else {
-          const q = query(collection(db, 'orders'), where('buyerUid', '==', window.currentUserUid));
-          const snap = await getDocs(q);
-          rows = [];
-          snap.forEach(ds => rows.push(ds.data() || {}));
-        }
+        const q = query(collection(db, 'orders'), where('buyerUid', '==', window.currentUserUid));
+        const snap = await getDocs(q);
+        rows = [];
+        snap.forEach(ds => rows.push(ds.data() || {}));
         rows.sort((a,b) => {
           const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
           const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
@@ -9006,6 +8996,7 @@ function confirmLogout() {
   <!-- Firebase: real Google login + user data -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-app.js";
+    import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-analytics.js";
     import {
       getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult,
       onAuthStateChanged, signOut, setPersistence, browserLocalPersistence, updateProfile
@@ -9018,142 +9009,21 @@ function confirmLogout() {
       serverTimestamp as _fbServerTimestamp
     } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
 
-    // ============================================================
-    // # 🧪 DEMO MODE — PREVIEW UI CHANGES WITHOUT TOUCHING FIREBASE #
-    // Set DEMO_MODE to true and reload the page: the site instantly
-    // shows a default logged-in "Demo User" profile (no login button,
-    // no real Google popup), and EVERY Firebase read/write on the
-    // whole site (login, wallet, wishlist, orders, referrals, admin
-    // panels...) is redirected to a fake in-browser store instead of
-    // your real Firestore/Auth. Nothing you do in demo mode ever
-    // reaches your real database or real users — it's 100% safe to
-    // click around and see your changes.
-    // Set it back to false to go live with the real website again.
-    // ============================================================
-    const DEMO_MODE = false;
+    // Firestore helper functions used across the whole site — thin
+    // pass-throughs to the real Firebase SDK.
+    function increment(n) { return _fbIncrement(n); }
+    function arrayUnion(...vals) { return _fbArrayUnion(...vals); }
+    function arrayRemove(...vals) { return _fbArrayRemove(...vals); }
+    function serverTimestamp() { return _fbServerTimestamp(); }
+    async function setDoc(ref, data, opts) { return _fbSetDoc(ref, data, opts); }
+    async function addDoc(collRef, data) { return _fbAddDoc(collRef, data); }
+    async function getDoc(ref) { return _fbGetDoc(ref); }
+    async function getDocs(q) { return _fbGetDocs(q); }
+    function onSnapshot(ref, cb) { return _fbOnSnapshot(ref, cb); }
+    async function runTransaction(dbArg, updateFn) { return _fbRunTransaction(dbArg, updateFn); }
 
-    // Fake "logged in" user shown everywhere when DEMO_MODE is true.
-    const DEMO_USER = {
-      uid: 'demo-user',
-      displayName: 'Demo User',
-      email: 'demo@ditemps.local',
-      photoURL: 'https://files.catbox.moe/kkta4i.png',
-      providerData: [{ providerId: 'google.com' }],
-      metadata: { creationTime: new Date().toString() }
-    };
-
-    // In-memory fake Firestore: { "collection/docId": {...fields} }.
-    // Pre-seeded so the demo profile looks populated right away.
-    window.__demoStore = {
-      'users/demo-user': {
-        walletBalance: 120,
-        walletUnlockedTemplates: [],
-        wishlist: ['Friendship Day', 'Birthday new 2'],
-        referralCount: 2
-      }
-    };
-    window.__demoListeners = {};
-
-    // Small stand-ins for Firestore's increment()/arrayUnion()/arrayRemove()
-    // sentinel values, so demo writes can resolve them the same way
-    // real Firestore would — without needing the real backend.
-    class DemoIncrement { constructor(n) { this.n = n; } }
-    class DemoArrayUnion { constructor(vals) { this.vals = vals; } }
-    class DemoArrayRemove { constructor(vals) { this.vals = vals; } }
-
-    function increment(n) { return DEMO_MODE ? new DemoIncrement(n) : _fbIncrement(n); }
-    function arrayUnion(...vals) { return DEMO_MODE ? new DemoArrayUnion(vals) : _fbArrayUnion(...vals); }
-    function arrayRemove(...vals) { return DEMO_MODE ? new DemoArrayRemove(vals) : _fbArrayRemove(...vals); }
-    function serverTimestamp() { return DEMO_MODE ? new Date() : _fbServerTimestamp(); }
-
-    function demoNotify(path) {
-      const raw = window.__demoStore[path];
-      (window.__demoListeners[path] || []).forEach(cb => {
-        cb({ data: () => (raw ? { ...raw } : {}), exists: () => raw != null });
-      });
-    }
-    function demoApplyFields(target, data) {
-      for (const k in data) {
-        const v = data[k];
-        if (v instanceof DemoIncrement) target[k] = (Number(target[k]) || 0) + v.n;
-        else if (v instanceof DemoArrayUnion) {
-          const arr = Array.isArray(target[k]) ? target[k].slice() : [];
-          v.vals.forEach(x => { if (!arr.includes(x)) arr.push(x); });
-          target[k] = arr;
-        } else if (v instanceof DemoArrayRemove) {
-          const arr = Array.isArray(target[k]) ? target[k].slice() : [];
-          target[k] = arr.filter(x => !v.vals.includes(x));
-        } else {
-          target[k] = v;
-        }
-      }
-      return target;
-    }
-    function demoWrite(ref, data, opts) {
-      const path = ref.path;
-      const existing = (opts && opts.merge && window.__demoStore[path]) ? { ...window.__demoStore[path] } : {};
-      window.__demoStore[path] = demoApplyFields(existing, data);
-      demoNotify(path);
-    }
-
-    // Firestore functions used across the whole site — each one checks
-    // DEMO_MODE first and, if on, reads/writes the fake store above
-    // instead of ever calling the real Firebase backend.
-    async function setDoc(ref, data, opts) {
-      if (DEMO_MODE) { demoWrite(ref, data, opts); return; }
-      return _fbSetDoc(ref, data, opts);
-    }
-    async function addDoc(collRef, data) {
-      if (DEMO_MODE) {
-        const id = 'demo-' + Math.random().toString(36).slice(2, 9);
-        window.__demoStore[collRef.path + '/' + id] = { ...data };
-        return { id };
-      }
-      return _fbAddDoc(collRef, data);
-    }
-    async function getDoc(ref) {
-      if (DEMO_MODE) {
-        const raw = window.__demoStore[ref.path];
-        return { exists: () => raw != null, data: () => (raw ? { ...raw } : undefined), id: ref.id };
-      }
-      return _fbGetDoc(ref);
-    }
-    async function getDocs(q) {
-      // Demo mode intentionally returns an empty result for collection
-      // queries (orders lists, admin lists) — individual screens seed
-      // their own sample rows locally instead. See loadAccountOrders().
-      if (DEMO_MODE) return { empty: true, forEach: () => {}, docs: [] };
-      return _fbGetDocs(q);
-    }
-    function onSnapshot(ref, cb) {
-      if (DEMO_MODE) {
-        const path = ref.path;
-        window.__demoListeners[path] = window.__demoListeners[path] || [];
-        window.__demoListeners[path].push(cb);
-        const raw = window.__demoStore[path];
-        cb({ data: () => (raw ? { ...raw } : {}), exists: () => raw != null });
-        return () => { window.__demoListeners[path] = (window.__demoListeners[path] || []).filter(f => f !== cb); };
-      }
-      return _fbOnSnapshot(ref, cb);
-    }
-    async function runTransaction(dbArg, updateFn) {
-      if (DEMO_MODE) {
-        const fakeTx = {
-          get: async (ref) => {
-            const raw = window.__demoStore[ref.path];
-            return { exists: () => raw != null, data: () => (raw ? { ...raw } : undefined) };
-          },
-          set: (ref, data, opts) => demoWrite(ref, data, opts),
-          update: (ref, data) => demoWrite(ref, data, { merge: true })
-        };
-        return updateFn(fakeTx);
-      }
-      return _fbRunTransaction(dbArg, updateFn);
-    }
-
-    // Use this instead of raw `auth.currentUser` anywhere in the app,
-    // so demo mode always resolves to the fake Demo User.
-    function getCurrentUser() { return DEMO_MODE ? DEMO_USER : auth.currentUser; }
+    // Use this instead of raw `auth.currentUser` anywhere in the app.
+    function getCurrentUser() { return auth.currentUser; }
 
     // ============================================================
     // # THIS IS THE SITE'S "BACKEND" (Firebase) — DON'T TOUCH THIS #
@@ -9163,18 +9033,20 @@ function confirmLogout() {
     // (for viewing users/orders).
     // ============================================================
     const firebaseConfig = {
-      apiKey: "AIzaSyCRAO7UDddkFKvKbGGBBtkruD22NZnNozU",
-      authDomain: "soravtemps-d5419.firebaseapp.com",
-      projectId: "soravtemps-d5419",
-      storageBucket: "soravtemps-d5419.firebasestorage.app",
-      messagingSenderId: "889624784593",
-      appId: "1:889624784593:web:3a325467962639facedff0"
+      apiKey: "AIzaSyDneahIyDuurQB30uGrM0iC6xkDv71yUjo",
+      authDomain: "ditemps.firebaseapp.com",
+      projectId: "ditemps",
+      storageBucket: "ditemps.firebasestorage.app",
+      messagingSenderId: "14858245467",
+      appId: "1:14858245467:web:97cdf1133278e001c6367e",
+      measurementId: "G-9W89PHQQQ7"
     };
 
     // # PUT YOUR OWN EMAIL HERE so the "Admin" panel shows up when you log in #
     const ADMIN_EMAIL = "sorav978460@gmail.com";
 
     const firebaseApp = initializeApp(firebaseConfig);
+    const analytics = getAnalytics(firebaseApp);
     const auth = getAuth(firebaseApp);
     const db = getFirestore(firebaseApp);
     const provider = new GoogleAuthProvider();
@@ -9184,9 +9056,7 @@ function confirmLogout() {
     // detect them so we can show a clear message instead of silently failing.
     const isInAppBrowser = /FBAN|FBAV|Instagram|Line\/|WhatsApp|MicroMessenger|TikTok|Snapchat/i.test(navigator.userAgent);
 
-    if (!DEMO_MODE) {
-      setPersistence(auth, browserLocalPersistence).catch((e) => console.warn('Persistence set failed:', e));
-    }
+    setPersistence(auth, browserLocalPersistence).catch((e) => console.warn('Persistence set failed:', e));
 
     // ============================================================
     // # GOOGLE LOGIN FIX
@@ -9222,7 +9092,6 @@ function confirmLogout() {
     };
 
     window.signInWithGoogle = async function () {
-      if (DEMO_MODE) { window.hideLogin(); alert('Demo Mode ON hai — aap already ek demo profile se logged in hain.'); return; }
       const status = document.getElementById('loginStatusText');
       const btn = document.querySelector('#loginModal button[onclick="signInWithGoogle()"]');
       if (status) status.textContent = 'Opening Google login…';
@@ -9263,7 +9132,6 @@ function confirmLogout() {
     window.__firebaseReady = true;
 
     window.signOutUser = async function () {
-      if (DEMO_MODE) { alert('Demo Mode ON hai — logout yahan disable hai. Normal website ke liye DEMO_MODE ko false karein.'); return; }
       try {
         await signOut(auth);
       } catch (err) {
@@ -9273,24 +9141,21 @@ function confirmLogout() {
     };
 
     // Restore a redirect login result after Google sends the user back.
-    if (!DEMO_MODE) {
-      getRedirectResult(auth).then(async (result) => {
-        if (result && result.user) {
-          try {
-            await saveUserData(result.user);
-          } catch (e) {
-            console.error('Could not save user after redirect login:', e);
-          }
+    getRedirectResult(auth).then(async (result) => {
+      if (result && result.user) {
+        try {
+          await saveUserData(result.user);
+        } catch (e) {
+          console.error('Could not save user after redirect login:', e);
         }
-      }).catch((err) => {
-        if (err && err.code) console.error('Google redirect login failed:', err);
-        const status = document.getElementById('loginStatusText');
-        if (status && err) status.textContent = 'Google login failed. Please try again.';
-      });
-    }
+      }
+    }).catch((err) => {
+      if (err && err.code) console.error('Google redirect login failed:', err);
+      const status = document.getElementById('loginStatusText');
+      if (status && err) status.textContent = 'Google login failed. Please try again.';
+    });
 
-    // Keep the navbar/profile state in sync with the logged-in user
-    // (real Firebase user normally, or the fake DEMO_USER in demo mode).
+    // Keep the navbar/profile state in sync with the logged-in user.
     async function handleAuthUser(user) {
       window.isUserLoggedIn = !!user;
       window.currentUserUid = user ? user.uid : null;
@@ -9330,14 +9195,7 @@ function confirmLogout() {
       }
     }
 
-    if (DEMO_MODE) {
-      // Skip the real Firebase auth listener entirely — just pretend
-      // the Demo User is already logged in, so no login popup, no
-      // real network call, no real saved data is ever involved.
-      handleAuthUser(DEMO_USER);
-    } else {
-      onAuthStateChanged(auth, handleAuthUser);
-    }
+    onAuthStateChanged(auth, handleAuthUser);
 
 
     // ============================================================
