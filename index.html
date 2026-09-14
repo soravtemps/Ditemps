@@ -1,6 +1,45 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<!-- ================================================================
+     # DITEMPS — FILE MAP #
+     This whole website (HTML + CSS + JS) lives in this ONE file.
+     Use Ctrl+F / Cmd+F and search for the text on the right to jump
+     straight to a section — searching is more reliable than line
+     numbers, which shift every time something is edited.
+
+     SEARCH FOR THIS TEXT                          TO FIND...
+     ------------------------------------------------------------
+     "THIS IS THE SITE'S \"TITLE\""                 Page title, SEO description/keywords (below)
+     <style> (first one, right after this)         Main CSS: colors, dark-theme variables, most components
+     "LIGHT THEME COLORS"                          The :root block that OVERRIDES the dark colors above —
+                                                    this is what visitors actually see by default
+     id="ditemps-settings-page-styles"             Extra CSS just for the Settings/Account page
+     id="ditemps-top-header-styles"                Extra CSS just for the sticky top header bar
+     (search "ditemps-" style ids further down)    Several small, later CSS patch blocks — each one is a
+                                                    focused fix (buttons, logo animation, wallet button size,
+                                                    etc). They come AFTER the main styles on purpose, so they
+                                                    can override just one thing without touching the rest.
+     id="all-section-wrapper"                      Main app: "All templates" browse page
+     id="premium-section-wrapper"                  Main app: "Premium" templates page
+     id="surprise-section-wrapper"                 Main app: "Surprise" templates page
+     id="cards-section-wrapper"                    Main app: "Cards" templates page
+     id="about-section-wrapper"                    "About Us" page
+     id="admin-section-wrapper"                    Admin-only dashboard (users/orders/wallet purchases) —
+                                                    only visible when logged in as ADMIN_EMAIL (see below)
+     id="detail-section-wrapper"                   Single template's detail/preview page
+     id="ditempsLandingPage"                       The public marketing landing page shown before "Enter Ditemps"
+     id="loginModal"                               Sign In / Sign Up popup (Google + email/password)
+     id="settingsModal"                            Account/Profile popup (My Gifts, Wishlist, Refer & Earn, Settings)
+     id="walletModal"                              Website Wallet popup (balance, referral link, daily check-in)
+     id="customizeModal"                           The form where a user fills in photos/text to build their gift
+     id="paymentModal"                             UPI/UTR payment + "buy with wallet" screen
+     "THIS IS THE SITE'S \"BACKEND\" (Firebase)"    Firebase project settings + ADMIN_EMAIL (near end of file)
+     "WEBSITE WALLET + REFER & EARN"                Wallet/referral/daily-check-in reward amounts (editable)
+     "const freeTemplates ="                        The actual list of templates: names, prices, images, links —
+     "const paidTemplates ="                        this is what you edit to add/change/remove a template.
+     "const premiumTemplates ="                     Each list already has its own comment explaining its rules.
+     ================================================================ -->
  <meta charset="UTF-8">
  <meta name="viewport" content="width=device-width, initial-scale=1.0">
  <meta name="color-scheme" content="light">
@@ -422,13 +461,6 @@
     font-size: 13px;
     font-weight: 800;
     font-family: var(--font-display);
-  }
-
-  .coin-price {
-    color: var(--accent-gold);
-    font-size: 10px;
-    font-weight: 800;
-    white-space: nowrap;
   }
 
   .detail-buy-actions {
@@ -950,7 +982,8 @@
     gap: 12px;
     min-width: 230px;
   }
-  /* AlwaysYou-style shimmering brand text loader */
+  /* Full-screen loading screen shown while the site starts up — the
+     "Ditemps" brand name with an animated shimmer effect across it. */
   .prep-brand-name {
     font-family: Inter, system-ui, sans-serif;
     font-size: 22px;
@@ -1152,25 +1185,15 @@
   .btn-secondary { background: rgba(255,255,255,0.1) !important; }
 
   /* ============================================================
-     # REFER & EARN — COINS SYSTEM (floating button + modal) #
-     All the CSS below is for the small "Refer & Earn" floating button,
-     its modal, tabs, Spin wheel, and the navbar coin-chip.
+     # REFER & EARN BUTTON + WALLET MODAL #
+     This is the round floating "🎁 Refer & Earn" button that sits at
+     the bottom-right of every page, and the popup (wallet modal) it
+     opens. The wallet modal shows the user's ₹ balance, their referral
+     link, and the daily check-in bonus.
+     TO EDIT: the button's text/emoji is in the HTML near id="referFab".
+     The referral reward amounts are set in the JS wallet functions
+     further down this file, not here — this section is CSS only.
   ============================================================ */
-
-  .coin-chip {
-    display: none;
-    align-items: center;
-    gap: 4px;
-    background: #fff8e6;
-    border: 1px solid rgba(232, 179, 106, 0.4);
-    color: #b78316;
-    font-weight: 800;
-    font-size: 12px;
-    padding: 6px 10px;
-    border-radius: 14px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
 
   .refer-fab {
     position: fixed;
@@ -1215,70 +1238,16 @@
     padding: 20px 16px 14px;
   }
   .wallet-single-page h3 { margin-bottom: 12px; }
-  .free-spin-balance {
-    margin-top: 5px; font-size: 11px; color: var(--text-muted);
+  @media (max-width:420px) {
+    .wallet-single-page { width:94%; max-height:90vh; }
   }
-  .free-spin-balance b { color: var(--accent-gold); }
-  .coins-action-list { display:flex; flex-direction:column; gap:10px; }
-  .coins-action-row {
-    display:flex; align-items:center; gap:10px;
-    background:rgba(255,255,255,.045);
-    border:1px solid rgba(255,255,255,.10);
-    border-radius:14px; padding:12px;
-  }
-  .coins-action-copy { flex:1; min-width:0; }
-  .coins-action-copy strong { display:block; font-size:13px; color:#fff; margin-bottom:4px; }
-  .coins-action-copy span { display:block; font-size:11px; line-height:1.4; color:var(--text-muted); }
-  .coins-action-copy small { display:block; margin-top:4px; font-size:9.5px; color:#b9afcc; }
-  .coins-action-btn {
-    width:auto !important; flex:0 0 auto; margin:0 !important;
-    padding:9px 13px !important; border-radius:18px !important;
-    background:linear-gradient(135deg,#900909,#300710) !important;
-    color:#fff !important; font-size:11px !important; font-weight:800 !important;
-  }
+
+  /* Referral link box (the "copy your invite link" row) —
+     used both inside the wallet modal and inside Settings.
+     .compact is a smaller version used inside the wallet modal. */
   .refer-link-box.compact { margin-top:8px; padding:6px 7px; }
   .refer-link-box.compact input { font-size:10px; min-width:0; }
   .refer-link-box.compact button { padding:7px 10px; font-size:10px; }
-  .spin-inline-box {
-    background:rgba(255,255,255,.025); border:1px solid rgba(232,179,106,.14);
-    border-radius:14px; padding:8px 8px 10px; text-align:center;
-  }
-  .compact-wheel { width:190px; height:190px; margin:2px auto 8px; }
-  .spin-inline-box .spin-result-text { min-height:18px; margin:0; font-size:12px; }
-  @media (max-width:420px) {
-    .wallet-single-page { width:94%; max-height:90vh; }
-    .coins-action-row { padding:10px; }
-    .compact-wheel { width:175px; height:175px; }
-  }
-  .coins-balance-banner {
-    text-align: center;
-    background: linear-gradient(135deg, rgba(232,179,106,0.18), rgba(232,179,106,0.05));
-    border: 1px solid rgba(232,179,106,0.35);
-    border-radius: 14px;
-    padding: 14px;
-    margin-bottom: 14px;
-  }
-  .coins-balance-banner .big-coin { font-size: 26px; font-weight: 800; color: var(--accent-gold); }
-  .coins-tabs { display: flex; gap: 6px; margin-bottom: 14px; overflow-x: auto; scrollbar-width: none; }
-  .coins-tabs::-webkit-scrollbar { display: none; }
-  .coins-tab-btn {
-    flex: 1;
-    text-align: center;
-    background: rgba(255,255,255,0.06);
-    color: var(--text-muted);
-    border: none;
-    padding: 9px 8px;
-    border-radius: 10px;
-    font-weight: 700;
-    font-size: 11.5px;
-    cursor: pointer;
-    white-space: nowrap;
-  }
-  .coins-tab-btn.active { background: linear-gradient(135deg, #900909, #300710); color: #fff; }
-  .coins-tab-panel { display: none; }
-  .coins-tab-panel.active { display: block; }
-  .coins-tab-panel p.hint { font-size: 12px; color: var(--text-muted); text-align: center; margin: 0 0 12px; }
-
   .refer-link-box {
     display: flex;
     align-items: center;
@@ -1291,62 +1260,6 @@
   }
   .refer-link-box input { flex: 1; background: transparent; border: none; color: #fff; font-size: 11px; outline: none; }
   .refer-link-box button { width: auto; margin: 0; padding: 8px 12px; font-size: 12px; }
-
-  .ad-watch-box, .redeem-item {
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 10px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-  }
-  .redeem-item .redeem-info { text-align: left; }
-  .redeem-item .redeem-info .rn { font-weight: 700; font-size: 13px; }
-  .redeem-item .redeem-info .rc { font-size: 11px; color: var(--accent-gold); font-weight: 700; }
-  .redeem-item button, .ad-watch-box button { width: auto; margin: 0; padding: 8px 14px; font-size: 12px; white-space: nowrap; }
-
-  .ad-overlay {
-    display: none;
-    position: fixed; inset: 0; z-index: 2000;
-    background: rgba(0,0,0,0.9);
-    align-items: center; justify-content: center;
-    flex-direction: column;
-    color: #fff;
-    text-align: center;
-    padding: 20px;
-  }
-  .ad-overlay .ad-box {
-    width: min(320px, 90vw);
-    aspect-ratio: 16/10;
-    background: linear-gradient(135deg, #1D1733, #0B0A17);
-    border: 1px solid rgba(232,179,106,0.4);
-    border-radius: 14px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 15px;
-    margin-bottom: 16px;
-  }
-  .ad-overlay .ad-timer { font-size: 22px; font-weight: 800; color: var(--accent-gold); margin-bottom: 8px; }
-
-  .spin-wheel-wrap { display: flex; flex-direction: column; align-items: center; }
-  .spin-wheel-outer { position: relative; width: 220px; height: 220px; margin: 6px auto 18px; }
-  .spin-wheel {
-    width: 100%; height: 100%; border-radius: 50%;
-    border: 6px solid var(--accent-gold);
-    transition: transform 4.5s cubic-bezier(0.15, 0.65, 0.15, 1);
-    box-shadow: 0 0 25px rgba(232,179,106,0.35);
-  }
-  .spin-wheel-pointer {
-    position: absolute; top: -6px; left: 50%; transform: translateX(-50%);
-    width: 0; height: 0;
-    border-left: 10px solid transparent; border-right: 10px solid transparent;
-    border-top: 18px solid var(--accent-gold);
-    z-index: 5;
-  }
-  .spin-result-text { font-weight: 800; font-size: 15px; min-height: 20px; margin-bottom: 10px; text-align: center; }
-
 
   /* Music upload field — the user uploads their own mp3/audio file directly,
      just like the photo/video upload box — an <audio> preview appears inside.
@@ -1441,7 +1354,7 @@
   .settings-tab.active { background:rgba(225,79,134,.1); color:var(--accent-pink); }
 
   /* ============================================================
-     # ACCOUNT / PROFILE PAGE (AlwaysYou-style) #
+     # ACCOUNT / PROFILE PAGE #
      Header row + profile card + stats + 4 tabs (My Gifts, Wishlist,
      Refer & Earn, Settings) shown inside the settings modal.
   ============================================================ */
@@ -1564,9 +1477,12 @@
   footer { text-align: center; padding: 30px 20px; font-size: 13px; color: var(--text-muted); }
 
 /* ============================================================
-   Ditemps LIGHT THEME — inspired by the supplied AlwaysYou
-   reference: clean white background, black typography,
-   soft grey surfaces, subtle pink/gold accents.
+   # LIGHT THEME COLORS — THIS IS THE SITE'S ACTUAL DEFAULT LOOK #
+   White background, black text, soft grey cards, pink/gold accents.
+   IMPORTANT: this :root block comes AFTER the dark-theme :root block
+   near the top of the file, so in CSS these values WIN and overwrite
+   the dark ones — this is the theme people actually see by default.
+   TO CHANGE THE SITE'S COLORS: edit the values below.
    ============================================================ */
 :root {
   --bg-main: #ffffff;
@@ -1689,9 +1605,6 @@ body {
 .price {
   color: #171717 !important;
 }
-.coin-price {
-  color: #c18b17 !important;
-}
 
 .badge.free {
   background: #edf9f2 !important;
@@ -1732,11 +1645,7 @@ body {
   border-color: #eeeeee !important;
 }
 .about-grid-item,
-.coins-action-row,
-.ad-watch-box,
-.redeem-item,
 .refer-link-box,
-.coins-tab-btn,
 .multi-photo-icon,
 .upload-box {
   background: #fafafa !important;
@@ -1861,32 +1770,6 @@ body {
   color: #333 !important;
 }
 
-.coins-balance-banner {
-  background: #fff9e9 !important;
-  border-color: #ead39d !important;
-}
-.coins-balance-banner .big-coin,
-.free-spin-balance b,
-.redeem-item .redeem-info .rc {
-  color: #b78316 !important;
-}
-.coins-tab-btn.active,
-.coins-action-btn {
-  background: #111111 !important;
-  color: #ffffff !important;
-}
-.coins-tab-btn {
-  color: #777 !important;
-}
-.ad-overlay {
-  background: rgba(0,0,0,.65) !important;
-}
-.ad-overlay .ad-box {
-  background: #ffffff !important;
-  border-color: #ead39d !important;
-  color: #333 !important;
-}
-
 .empty-note {
   background: #ffffff !important;
   border-color: #dddddd !important;
@@ -1901,12 +1784,9 @@ body {
 /* Remove remaining dark decorative gradients from common components. */
 .card-image-box,
 .detail-hero,
-.ad-overlay .ad-box,
 .view-btn,
 .buy-btn,
-.login-btn,
-.coins-tab-btn.active,
-.coins-action-btn {
+.login-btn {
   background-image: none !important;
 }
 
@@ -2014,13 +1894,11 @@ body {
 .daily-checkin button:disabled { opacity:.5; }
 
 
-/* Legacy coin/spin styles are intentionally unused after the wallet migration. */
-.coin-price, .coin-chip-old, .coins-tabs, .coins-tab-panel, .spin-wheel-wrap, .spin-wheel-outer, .spin-wheel, .spin-wheel-pointer, .spin-inline-box, .free-spin-balance { display:none !important; }
-
 /* ============================================================
-   AUTH SHEET — AlwaysYou-style Sign In / Sign Up bottom sheet
-   Only Google Sign-In is functionally wired; email/password
-   fields are shown for design parity but are not submitted.
+   # LOGIN / SIGN-UP POPUP (bottom sheet that slides up) #
+   Supports BOTH Google Sign-In (one tap) AND email+password
+   sign-up/login — both are fully working (see handleEmailAuthSubmit
+   and the Google button handlers further down in the JS).
 ============================================================ */
 .auth-sheet-overlay {
   align-items: flex-end !important;
@@ -2229,11 +2107,15 @@ body.ditemps-landing-active > .modal-overlay.active { z-index:1000010 !important
 @media (max-width:650px){ .detail-info-grid,.detail-review-summary,.detail-platform-grid,.detail-offer-section { grid-template-columns:1fr; } .detail-mini-grid { grid-template-columns:1fr; } .detail-cta-row button { flex:1 1 100%; } }
 </style>
 
-<style id="ditemps-alwaysyou-profile-overrides">
+<style id="ditemps-profile-page-overrides">
 /* ============================================================
-   DITEMPS PROFILE — AlwaysYou reference match
-   Scoped to the account/profile screen so the rest of Ditemps
-   keeps its existing design and functionality.
+   # ACCOUNT / PROFILE PAGE — EXTRA STYLE OVERRIDES #
+   This is a SECOND, LATER <style> block. Because it comes after the
+   main <style> block above, any selector here wins over the same
+   selector defined earlier. It only affects the account/profile
+   screen (inside #settingsModal) — the rest of the site is untouched.
+   Kept separate on purpose so editing the profile page's look here
+   can't accidentally break styling elsewhere on the site.
    ============================================================ */
 
 #settingsModal.modal-overlay {
@@ -2391,7 +2273,8 @@ body.ditemps-landing-active > .modal-overlay.active { z-index:1000010 !important
   background: #fff !important;
 }
 
-/* Referral tab: match the black AlwaysYou-style hero shown in the reference. */
+/* Refer & Earn tab inside the profile page: full-width black banner ("hero")
+   at the top, with the referral stats/link below it. */
 #settingsModal .referral-hero {
   width: 100%;
   min-height: 390px;
@@ -2635,8 +2518,10 @@ body:has(#settingsModal.active) .refer-fab {
 </style>
 
 
-<style id="ditemps-settings-v8">
-/* ===== Ditemps settings — AlwaysYou-inspired layout ===== */
+<style id="ditemps-settings-page-styles">
+/* Extra layout styles for the Settings / Account page (profile tabs,
+   spacing, section headings). Loaded after the main styles, so
+   anything here overrides earlier rules for the settings screen only. */
 .ditemps-settings-page {
   padding-bottom: 45px;
 }
@@ -3077,11 +2962,7 @@ html.ditemps-dark .about-box {
   border-color: #2c2e35 !important;
 }
 html.ditemps-dark .about-grid-item,
-html.ditemps-dark .coins-action-row,
-html.ditemps-dark .ad-watch-box,
-html.ditemps-dark .redeem-item,
 html.ditemps-dark .refer-link-box,
-html.ditemps-dark .coins-tab-btn,
 html.ditemps-dark .multi-photo-icon,
 html.ditemps-dark .upload-box {
   background: #22242a !important;
@@ -3203,8 +3084,9 @@ html.ditemps-dark .dl-footer {
 </style>
 
 
-<style id="ditemps-v9-interface">
-/* ===== Screenshot-inspired Ditemps header ===== */
+<style id="ditemps-top-header-styles">
+/* Sticky top header bar (logo + search + wallet chip + profile icon)
+   shown on every app page — not the landing page, which has its own header. */
 .ditemps-top-header {
   max-width: 620px !important;
   margin: 14px auto 0 !important;
@@ -3548,7 +3430,7 @@ html.ditemps-dark .ditemps-filter-menu-item.active { color:#e8b36a; }
 </style>
 
 
-<script id="ditemps-v9-nav-js">
+<script id="ditemps-section-nav-js">
 (function(){
   // Main discovery filter labels. Section navigation (Premium/Surprise/Cards/About Us)
   // is kept in the site, but the All-page dropdown is now dedicated to discovery.
@@ -4014,7 +3896,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
         <button id="landingUserChip" class="ditemps-nav-profile" type="button" onclick="openSettings()" aria-label="Open profile" style="display:none;">
           <img id="landingUserPhoto" src="" alt="Profile">
         </button>
-        <div id="landingCoinChip" class="ditemps-wallet-chip" style="display:none; cursor:pointer;" aria-label="Website wallet balance" onclick="openWalletModal()">₹<span id="landingCoinBalance">0</span></div>
+        <div id="landingWalletChip" class="ditemps-wallet-chip" style="display:none; cursor:pointer;" aria-label="Website wallet balance" onclick="openWalletModal()">₹<span id="landingWalletBalance">0</span></div>
         <button class="dl-signin" id="landingSigninBtn" onclick="if(typeof openLogin==='function') openLogin();">Sign in</button>
         <button class="dl-enter" onclick="enterDitempsApp()">Enter Ditemps</button>
       </div>
@@ -4070,6 +3952,14 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
 
       <section class="dl-section"><div class="dl-wrap"><div class="dl-section-head"><div class="dl-eyebrow">Create your own</div><h2>In 5 minutes</h2><p>Choose a template, personalise your love, and share it instantly.</p></div><div class="dl-steps"><div class="dl-step"><div class="dl-step-num">01</div><h3>Choose a Template</h3><p>Explore beautifully crafted templates and choose the one that perfectly matches your special occasion.</p></div><div class="dl-step"><div class="dl-step-num">02</div><h3>Personalise your love</h3><p>Add your photos, videos, messages, music and beautiful memories.</p></div><div class="dl-step"><div class="dl-step-num">03</div><h3>Share</h3><p>Get your unique link and a beautiful QR code and share instantly.</p></div></div></div></section>
 
+      <!-- ⚠️ EDIT THIS: "Memory Flipbook" showcase section on the landing page.
+           The iframe and the button link below both point to
+           https://alwaysyou.in/... which is a DIFFERENT website's demo —
+           not something hosted on Ditemps. Visitors clicking "Open flipbook"
+           are currently taken away to that other site. Replace both the
+           iframe `src` and the button `href` below with your own flipbook
+           demo link once you have one, so this section shows your own
+           content on your own domain. -->
       <section class="dl-section dl-flipbook-section" aria-label="Memory flipbook">
   <div class="dl-wrap dl-two dl-flipbook-layout">
     <div class="dl-flipbook-frame">
@@ -4133,7 +4023,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
 })();
 </script>
 
-  <!-- Ditemps branded reveal loader (AlwaysYou-style shimmer text) -->
+  <!-- Full-screen loading screen (shimmering "Ditemps" text) shown briefly when the site first opens -->
   <div id="sitePrepLoader" class="site-prep-loader" aria-live="polite" aria-busy="true">
     <div class="prep-brand-loader" aria-hidden="true">
       <span class="prep-brand-name">Ditemps...</span>
@@ -4177,7 +4067,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
     <button id="navUserChip" class="ditemps-nav-profile" type="button" onclick="openSettings()" aria-label="Open profile" style="display:none;">
       <img id="navUserPhoto" src="" alt="Profile">
     </button>
-    <div id="navCoinChip" class="ditemps-wallet-chip" style="display:none;" aria-label="Website wallet balance">₹<span id="navCoinBalance">0</span></div>
+    <div id="navWalletChip" class="ditemps-wallet-chip" style="display:none;" aria-label="Website wallet balance">₹<span id="navWalletBalance">0</span></div>
   </nav>
 
   <!-- SuperProfile Avatar Circle Header -->
@@ -4682,7 +4572,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
     </div>
   </div>
 
-  <!-- Login Modal (AlwaysYou-style Sign In / Sign Up sheet — Google Sign-In only) -->
+  <!-- Login Modal: the bottom-sheet popup with Google Sign-In + email/password Sign In & Sign Up -->
   <div class="modal-overlay auth-sheet-overlay" id="loginModal">
     <div class="auth-sheet">
       <div class="auth-sheet-handle-wrap"><div class="auth-sheet-handle"></div></div>
@@ -4749,7 +4639,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
     </div>
   </div>
 
-  <!-- Settings Modal / Account Page (AlwaysYou-style) -->
+  <!-- Settings Modal / Account Page: profile info, My Gifts, Wishlist, Refer & Earn, and app settings -->
   <div class="modal-overlay" id="settingsModal">
     <div class="modal-box">
 
@@ -9867,8 +9757,8 @@ function confirmLogout() {
         if (adminMenu) adminMenu.style.display = 'none';
         if (landingSigninBtn) landingSigninBtn.style.display = '';
         if (landingUserChip) landingUserChip.style.display = 'none';
-        const landingCoinChip = document.getElementById('landingCoinChip');
-        if (landingCoinChip) landingCoinChip.style.display = 'none';
+        const landingWalletChip = document.getElementById('landingWalletChip');
+        if (landingWalletChip) landingWalletChip.style.display = 'none';
         window.currentUserWallet = 0;
         window.currentUserPremiumUntil = 0;
         window.walletUnlockedTemplateNames = new Set();
@@ -9879,16 +9769,22 @@ function confirmLogout() {
 
 
     // ============================================================
-    // # WEBSITE WALLET + REFER & EARN + DAILY CHECK-IN #
-    // Wallet money is website-only credit; it is not withdrawable cash.
+    // # WEBSITE WALLET + REFER & EARN + DAILY CHECK-IN — EDITABLE #
+    // Wallet money is website-only credit (₹ symbol), not real/withdrawable
+    // cash — it can only be spent to unlock paid/premium templates here.
+    // TO CHANGE ANY REWARD AMOUNT: just edit the numbers below.
+    // ⚠️ These numbers only control what the FRONT-END shows/attempts.
+    // The real money-safety check must live in your Firestore Security
+    // Rules (see the rules we wrote earlier in this chat) — otherwise a
+    // user could tamper with the page and give themselves wallet credit.
     // ============================================================
-    const SIGNUP_BONUS_WALLET = 50;
-    const REFER_BONUS_WALLET = 10;
-    const FRIEND_FIRST_ORDER_DISCOUNT = 20;
-    const MAX_REFERRALS = 10;
-    const DAILY_CHECKIN_MIN = 1;
-    const DAILY_CHECKIN_MAX = 20;
-    const DAILY_CHECKIN_COOLDOWN_MS = 24 * 60 * 60 * 1000;
+    const SIGNUP_BONUS_WALLET = 50;        // ₹ given free on first-ever signup
+    const REFER_BONUS_WALLET = 10;         // ₹ given to YOU when someone uses your referral link
+    const FRIEND_FIRST_ORDER_DISCOUNT = 20; // ₹ off for the FRIEND on their first order via your link
+    const MAX_REFERRALS = 10;              // cap on how many referral bonuses one account can earn
+    const DAILY_CHECKIN_MIN = 1;           // smallest possible ₹ reward from daily check-in
+    const DAILY_CHECKIN_MAX = 20;          // largest possible ₹ reward from daily check-in
+    const DAILY_CHECKIN_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours between check-ins (in milliseconds)
 
     // Capture ?ref=<uid> and remember it until a genuinely new account signs in.
     (function captureReferralParam() {
@@ -9928,6 +9824,15 @@ function confirmLogout() {
         } else {
           const existing = snap.data() || {};
           const migration = {};
+          // ONE-TIME MIGRATION: the site used to call this balance "coins"
+          // (Firestore field: coins) before it was renamed to "wallet"
+          // (Firestore field: walletBalance). For any user who signed up
+          // back then and has never logged in since, this copies their
+          // old `coins` number into the new `walletBalance` field so they
+          // don't lose their balance. Safe to delete this whole `if` block
+          // once you're sure no old user accounts still have a `coins`
+          // field without a `walletBalance` field (check your Firestore
+          // `users` collection to confirm before removing).
           if (existing.walletBalance == null && Number.isFinite(Number(existing.coins))) {
             migration.walletBalance = Number(existing.coins);
           }
@@ -9985,17 +9890,17 @@ function confirmLogout() {
         const sessionsEl = document.getElementById('acctStatSessions');
         if (sessionsEl) sessionsEl.textContent = window.currentUserSessionCount;
 
-        const navChip = document.getElementById('navCoinChip');
+        const navChip = document.getElementById('navWalletChip');
         if (navChip) {
           navChip.style.display = 'flex';
-          navChip.innerHTML = `₹<span id="navCoinBalance">${window.isAdminUser ? '∞' : wallet}</span>`;
+          navChip.innerHTML = `₹<span id="navWalletBalance">${window.isAdminUser ? '∞' : wallet}</span>`;
           navChip.title = 'Website Wallet';
         }
-        const landingCoinChip = document.getElementById('landingCoinChip');
-        if (landingCoinChip) {
-          landingCoinChip.style.display = 'flex';
-          landingCoinChip.innerHTML = `₹<span id="landingCoinBalance">${window.isAdminUser ? '∞' : wallet}</span>`;
-          landingCoinChip.title = 'Website Wallet';
+        const landingWalletChip = document.getElementById('landingWalletChip');
+        if (landingWalletChip) {
+          landingWalletChip.style.display = 'flex';
+          landingWalletChip.innerHTML = `₹<span id="landingWalletBalance">${window.isAdminUser ? '∞' : wallet}</span>`;
+          landingWalletChip.title = 'Website Wallet';
         }
         const modalBal = document.getElementById('walletModalBalance');
         if (modalBal) modalBal.textContent = window.isAdminUser ? '∞' : wallet;
@@ -10012,9 +9917,6 @@ function confirmLogout() {
         updateDailyCheckinState(data);
       });
     }
-
-    // Backward-compatible name for any old call sites.
-    function listenToCoins(uid) { listenToWallet(uid); }
 
     function getDailyCheckinState(data) {
       const raw = data && data.dailyCheckinAt;
