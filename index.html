@@ -10047,6 +10047,40 @@ function confirmLogout() {
       await markReferralPurchase(user.uid);
     }
 
+    // ============================================================
+    // # SAVE CUSTOMIZED CARD DATA (this was MISSING — it was called
+    //   from the "Customize" form but never defined anywhere, so no
+    //   card data was ever actually saved to Firestore, and every
+    //   generated link had no ?id=..., so templates loaded empty). #
+    // Called from generateCardLink() with { templateName, values, photoGroups }.
+    // - `values` holds every plain text/number/password/textarea/music/
+    //   video field, keyed exactly by that field's `key`.
+    // - `photoGroups` holds every photos/cutout field as
+    //   { key: { 1: url, 2: url, ... } } (slot objects).
+    // This function flattens each photoGroups[key] into a plain, ordered
+    // array under that SAME key at the top level of the document — which
+    // is exactly the shape every template's applyCardData() expects
+    // (e.g. Array.isArray(d.mainPhoto), d.memoryPhotos.map(...)).
+    // Returns the new Firestore document's ID, used as the ?id= in the link.
+    // ============================================================
+    async function saveCardData({ templateName, values, photoGroups }) {
+      const data = { ...(values || {}), templateName: templateName || '', createdAt: serverTimestamp() };
+
+      for (const key in (photoGroups || {})) {
+        const slots = photoGroups[key] || {};
+        data[key] = Object.keys(slots)
+          .sort((a, b) => Number(a) - Number(b))
+          .map(k => slots[k])
+          .filter(Boolean);
+      }
+
+      const user = getCurrentUser();
+      if (user) data.ownerUid = user.uid;
+
+      const docRef = await addDoc(collection(db, 'cards'), data);
+      return docRef.id;
+    }
+
     // Pays the REFERRER their ₹10 bonus, but only the first time their
     // referred friend completes a real UPI purchase — never more than once
     // per friend, and never once the referrer has hit MAX_REFERRALS payouts.
@@ -10443,7 +10477,7 @@ function confirmLogout() {
       increment, arrayUnion, arrayRemove, serverTimestamp,
       getCurrentUser, deleteUser, sendEmailVerification,
       reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider,
-      saveOrderToFirestore
+      saveOrderToFirestore, saveCardData
     });
   </script>
 
