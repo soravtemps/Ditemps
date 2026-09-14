@@ -1071,6 +1071,20 @@
     z-index: 2600;
   }
 
+  /* Welcome/referral bonus popup — must appear above EVERY other modal
+     (including the login sheet it often follows right after), so it
+     always gets the highest z-index on the page. */
+  #rewardPopup.modal-overlay {
+    z-index: 2700;
+  }
+  .reward-popup-box {
+    max-width: 320px;
+    text-align: center;
+  }
+  .reward-popup-emoji { font-size: 46px; margin-bottom: 6px; }
+  .reward-popup-box h3 { margin: 0 0 6px; font-size: 21px; }
+  .reward-popup-box p { margin: 0; font-size: 13px; color: var(--text-muted); }
+
   .modal-box {
     background: rgba(5,9,4,0.1);
     border: 1px solid rgba(225, 79, 134, 0.3);
@@ -1880,18 +1894,48 @@ body {
 .referral-reward-card { border-radius:14px; padding:12px; background:#191919; border:1px solid #292929; }
 .referral-reward-card b { display:block; font-size:23px; margin-top:3px; }
 .referral-reward-card span { font-size:9px; color:#aaa; text-transform:uppercase; letter-spacing:.8px; }
-.daily-checkin {
-  background:#fff;
-  border:1px solid #eee;
-  border-radius:16px;
-  padding:14px;
-  margin-top:10px;
+
+/* Referral performance stats row (Link Opens / Purchases / Earnings) —
+   shown inside both the Wallet modal and the profile Refer & Earn tab. */
+.referral-stats-row { display:flex; gap:8px; margin-top:12px; }
+.referral-stat-card {
+  flex:1; text-align:center; background:#fff; border:1px solid #eee;
+  border-radius:14px; padding:10px 6px;
 }
-.daily-checkin-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }
-.daily-checkin h4 { margin:0 0 4px; font-size:14px; }
-.daily-checkin p { margin:0; color:#777; font-size:11px; }
-.daily-checkin button { width:auto; margin:0; padding:9px 14px; border-radius:20px; background:#111; color:#fff; }
-.daily-checkin button:disabled { opacity:.5; }
+.referral-stat-num { display:block; font-size:17px; font-weight:800; }
+.referral-stat-label { display:block; font-size:9.5px; color:#888; text-transform:uppercase; letter-spacing:.5px; margin-top:2px; }
+
+/* 7-Day Daily Check-in strip — replaces the old single random-reward
+   button. Each day is a small card (see renderDailyCheckinStrip() in the
+   JS); TODAY's claimable day is highlighted, past/future days are shown
+   for preview. To change the ₹ amounts, edit DAILY_CHECKIN_REWARDS in the JS. */
+.daily-checkin-strip {
+  background:#fff; border:1px solid #eee; border-radius:16px;
+  padding:14px; margin-top:10px;
+}
+.daily-checkin-strip h4 { margin:0 0 3px; font-size:14px; }
+.daily-checkin-strip-sub { margin:0 0 10px; color:#777; font-size:11px; }
+.daily-checkin-days {
+  display:grid; grid-template-columns:repeat(4, 1fr); gap:6px;
+}
+.checkin-day-card {
+  border:1px solid #eee; border-radius:12px; padding:8px 4px;
+  text-align:center; background:#fafafa;
+}
+.checkin-day-card .cd-label { display:block; font-size:9px; color:#888; text-transform:uppercase; font-weight:700; }
+.checkin-day-card .cd-amount { display:block; font-size:14px; font-weight:800; margin:4px 0; }
+.checkin-day-card .cd-state { display:block; font-size:9px; color:#aaa; }
+.checkin-day-card.is-done { background:#f1f1f1; opacity:.6; }
+.checkin-day-card.is-today {
+  background:#111; border-color:#111;
+}
+.checkin-day-card.is-today .cd-label,
+.checkin-day-card.is-today .cd-amount { color:#fff; }
+.checkin-day-card.is-today .cd-state { color:#ffd77a; }
+.checkin-day-card.is-today { cursor:pointer; }
+/* Day 7 (the biggest reward) spans the full width so it stands out,
+   matching the reference screenshot's layout. */
+.checkin-day-card.cd-day-7 { grid-column: 1 / -1; }
 
 
 /* ============================================================
@@ -4689,10 +4733,10 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
         <div class="referral-hero">
           <div class="gift">🎁</div>
           <div class="eyebrow">INVITE FRIENDS · EARN WALLET CREDIT</div>
-          <h4>Give ₹20.<br>Get ₹10.</h4>
-          <p>Share your referral link. Your friend gets ₹20 off their first order and you get ₹10 wallet credit.</p>
+          <h4>Share the love.<br>Earn ₹10.</h4>
+          <p>Your friend gets ₹10 signup bonus + ₹5 extra for joining via your link. You get ₹10 wallet credit once they buy any template with UPI.</p>
           <div class="referral-rewards">
-            <div class="referral-reward-card"><span>They get</span><b>₹20</b></div>
+            <div class="referral-reward-card"><span>Friend gets</span><b>₹15</b></div>
             <div class="referral-reward-card"><span>You earn</span><b>₹10</b></div>
           </div>
         </div>
@@ -4710,14 +4754,37 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
         <button class="generate-btn" style="margin-top:0;" onclick="shareProfileReferLink()">Share Referral Link</button>
         <div class="status-text" id="profileReferralStatus"></div>
 
-        <div class="daily-checkin">
-          <div class="daily-checkin-row">
-            <div><h4>🎁 Daily Check-in</h4><p>Claim a random ₹1–₹20 wallet reward every 24 hours.</p></div>
-            <button id="dailyCheckinBtn" onclick="claimDailyCheckin()">Claim</button>
+        <!-- Referral performance stats — how many people opened the link,
+             how many of them actually paid for something, and total ₹
+             earned so far. Numbers come from the users/{uid} doc fields
+             referralLinkOpens / referralPurchases / referralEarnings. -->
+        <div class="referral-stats-row">
+          <div class="referral-stat-card">
+            <span class="referral-stat-num" id="profileReferralOpens">0</span>
+            <span class="referral-stat-label">Link Opens</span>
           </div>
+          <div class="referral-stat-card">
+            <span class="referral-stat-num" id="profileReferralPurchases">0</span>
+            <span class="referral-stat-label">Purchases</span>
+          </div>
+          <div class="referral-stat-card">
+            <span class="referral-stat-num" id="profileReferralEarnings">₹0</span>
+            <span class="referral-stat-label">Earnings</span>
+          </div>
+        </div>
+
+        <!-- 7-day Daily Check-in strip (Day 1 → Day 7, fixed reward amounts
+             shown upfront). Only ONE day is ever "claimable" at a time —
+             today's day in the cycle — the rest are shown for preview only.
+             See DAILY_CHECKIN_REWARDS near the top of the JS to edit amounts. -->
+        <div class="daily-checkin-strip">
+          <h4>🎁 Daily Check-in</h4>
+          <p class="daily-checkin-strip-sub">Come back every day — rewards get bigger through Day 7, then the cycle repeats.</p>
+          <div class="daily-checkin-days" id="dailyCheckinDaysProfile"></div>
           <div class="status-text" id="dailyCheckinStatus"></div>
         </div>
       </div>
+
 
       <div id="accountSettingsPanel" style="display:none;" class="ditemps-settings-page">
 
@@ -4874,10 +4941,10 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
       <div class="referral-hero">
         <div class="gift">🎁</div>
         <div class="eyebrow">INVITE FRIENDS · EARN WALLET CREDIT</div>
-        <h4>Give ₹20.<br>Get ₹10.</h4>
-        <p>Friend gets ₹20 off first order · You get ₹10 wallet credit.</p>
+        <h4>Share the love.<br>Earn ₹10.</h4>
+        <p>Friend gets ₹15 in signup bonuses · You get ₹10 when they buy with UPI.</p>
         <div class="referral-rewards">
-          <div class="referral-reward-card"><span>They get</span><b>₹20</b></div>
+          <div class="referral-reward-card"><span>Friend gets</span><b>₹15</b></div>
           <div class="referral-reward-card"><span>You earn</span><b>₹10</b></div>
         </div>
       </div>
@@ -4888,15 +4955,49 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
       <button class="generate-btn" style="margin-top:0;" onclick="shareReferLink()">Share Referral Link</button>
       <div class="status-text" id="referStatusText"></div>
 
-      <div class="daily-checkin">
-        <div class="daily-checkin-row">
-          <div><h4>🎁 Daily Check-in</h4><p>Random ₹1–₹20 wallet reward every 24 hours.</p></div>
-          <button id="dailyCheckinBtnModal" onclick="claimDailyCheckin()">Claim</button>
+      <div class="referral-stats-row">
+        <div class="referral-stat-card">
+          <span class="referral-stat-num" id="walletReferralOpens">0</span>
+          <span class="referral-stat-label">Link Opens</span>
         </div>
+        <div class="referral-stat-card">
+          <span class="referral-stat-num" id="walletReferralPurchases">0</span>
+          <span class="referral-stat-label">Purchases</span>
+        </div>
+        <div class="referral-stat-card">
+          <span class="referral-stat-num" id="walletReferralEarnings">₹0</span>
+          <span class="referral-stat-label">Earnings</span>
+        </div>
+      </div>
+
+      <div class="daily-checkin-strip">
+        <h4>🎁 Daily Check-in</h4>
+        <p class="daily-checkin-strip-sub">Rewards get bigger through Day 7, then it loops back to Day 1.</p>
+        <div class="daily-checkin-days" id="dailyCheckinDaysModal"></div>
         <div class="status-text" id="dailyCheckinStatusModal"></div>
       </div>
 
       <button class="modal-close" onclick="closeWalletModal()">Close</button>
+    </div>
+  </div>
+
+  <!-- ============================================================
+       # WELCOME / REFERRAL BONUS POPUP #
+       One small reusable popup, reused for BOTH messages a new user
+       sees a few seconds after their first-ever login:
+       1) "You've won ₹10!" (every new user)
+       2) "You got ₹5 referral bonus!" (only if they signed up via a
+          friend's referral link) — shown as a SEPARATE popup right
+          after the first one is closed, not combined into one message.
+       See scheduleWelcomeBonusPopups() / showRewardPopup() in the JS.
+  ============================================================ -->
+  <div class="modal-overlay reward-popup-overlay" id="rewardPopup">
+    <div class="modal-box reward-popup-box">
+      <div class="reward-popup-emoji" id="rewardPopupEmoji">🎉</div>
+      <h3 id="rewardPopupTitle">You've won ₹10!</h3>
+      <p id="rewardPopupMessage">Refer your friends to earn more.</p>
+      <button class="generate-btn" id="rewardPopupCta" style="margin-top:14px;" onclick="rewardPopupCtaClicked()">Refer &amp; Earn</button>
+      <button class="modal-close" onclick="closeRewardPopup()">Not now</button>
     </div>
   </div>
 
@@ -9587,7 +9688,12 @@ function confirmLogout() {
         try {
           const result = await signInWithPopup(auth, provider);
           if (result && result.user) {
-            await saveUserData(result.user);
+            const suResult = await saveUserData(result.user);
+            if (suResult && suResult.isFirstTimeUser) scheduleWelcomeBonusPopups(suResult.validReferral);
+            // Login succeeded — close the popup right away instead of
+            // leaving it stuck on "Opening Google login…" forever.
+            if (status) status.textContent = '';
+            window.closeLogin();
           }
         } catch (popupErr) {
           const code = popupErr && popupErr.code;
@@ -9657,9 +9763,12 @@ function confirmLogout() {
           : await signInWithEmailAndPassword(auth, email, password);
 
         if (result && result.user) {
-          await saveUserData(result.user);
+          const suResult = await saveUserData(result.user);
+          if (suResult && suResult.isFirstTimeUser) scheduleWelcomeBonusPopups(suResult.validReferral);
         }
         if (status) status.textContent = '';
+        // Login/signup succeeded — close the popup instead of leaving it open.
+        window.closeLogin();
       } catch (err) {
         console.error('Email auth failed:', err);
         if (status) status.textContent = emailAuthErrorMessage(err);
@@ -9701,7 +9810,9 @@ function confirmLogout() {
     getRedirectResult(auth).then(async (result) => {
       if (result && result.user) {
         try {
-          await saveUserData(result.user);
+          const suResult = await saveUserData(result.user);
+          if (suResult && suResult.isFirstTimeUser) scheduleWelcomeBonusPopups(suResult.validReferral);
+          window.closeLogin(); // in case the login sheet was still showing from before the redirect
         } catch (e) {
           console.error('Could not save user after redirect login:', e);
         }
@@ -9744,8 +9855,11 @@ function confirmLogout() {
         }
 
         try {
-          await saveUserData(user);
+          const result = await saveUserData(user);
           listenToWallet(user.uid);
+          if (result && result.isFirstTimeUser) {
+            scheduleWelcomeBonusPopups(result.validReferral);
+          }
         } catch (err) {
           console.error('User data setup failed:', err);
         }
@@ -9778,24 +9892,46 @@ function confirmLogout() {
     // Rules (see the rules we wrote earlier in this chat) — otherwise a
     // user could tamper with the page and give themselves wallet credit.
     // ============================================================
-    const SIGNUP_BONUS_WALLET = 50;        // ₹ given free on first-ever signup
-    const REFER_BONUS_WALLET = 10;         // ₹ given to YOU when someone uses your referral link
-    const FRIEND_FIRST_ORDER_DISCOUNT = 20; // ₹ off for the FRIEND on their first order via your link
+    const SIGNUP_BONUS_WALLET = 10;        // ₹ given free to EVERY new user on first-ever signup
+    const REFERRED_SIGNUP_BONUS = 5;       // ₹ EXTRA given only if that new user came via a referral link
+    const REFER_BONUS_WALLET = 10;         // ₹ given to the REFERRER — but only once their friend
+                                            // actually pays for a template via UPI (see markReferralPurchase()
+                                            // below). Not given at signup, to stop fake-account abuse.
     const MAX_REFERRALS = 10;              // cap on how many referral bonuses one account can earn
-    const DAILY_CHECKIN_MIN = 1;           // smallest possible ₹ reward from daily check-in
-    const DAILY_CHECKIN_MAX = 20;          // largest possible ₹ reward from daily check-in
-    const DAILY_CHECKIN_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 hours between check-ins (in milliseconds)
+
+    // Daily Check-in — fixed 7-day reward cycle (Day 1 → Day 7, shown to the
+    // user in advance, then it loops back to Day 1). Index 0 = Day 1's reward.
+    const DAILY_CHECKIN_REWARDS = [1, 3, 5, 10, 20, 25, 50]; // ₹ per day, Day 1..Day 7
+    const DAILY_CHECKIN_COOLDOWN_MS = 24 * 60 * 60 * 1000;      // must wait this long before next claim
+    const DAILY_CHECKIN_STREAK_BREAK_MS = 48 * 60 * 60 * 1000;  // miss a day beyond this and the streak resets to Day 1
 
     // Capture ?ref=<uid> and remember it until a genuinely new account signs in.
+    // Also counts this as a "link open" on the referrer's stats (best-effort —
+    // see markReferralLinkOpen() below), even if this visitor never signs up.
     (function captureReferralParam() {
       try {
         const params = new URLSearchParams(window.location.search);
         const ref = params.get('ref');
         if (ref && !localStorage.getItem('referredBy_processed')) {
           localStorage.setItem('pendingReferrer', ref);
+          if (!sessionStorage.getItem('referralOpenCounted_' + ref)) {
+            sessionStorage.setItem('referralOpenCounted_' + ref, '1');
+            markReferralLinkOpen(ref);
+          }
         }
       } catch (e) { /* ignore */ }
     })();
+
+    // Best-effort click/open counter for the Refer & Earn stats panel.
+    // This does NOT touch walletBalance — it only bumps a plain counter —
+    // so it needs its own narrow Firestore rule allowing an unauthenticated,
+    // increment-only update to just the `referralLinkOpens` field. See the
+    // note we added to the Firestore rules discussion for the exact rule.
+    function markReferralLinkOpen(referrerUid) {
+      try {
+        setDoc(doc(db, "users", referrerUid), { referralLinkOpens: increment(1) }, { merge: true }).catch(() => {});
+      } catch (e) { /* ignore — stats-only, never block the visitor */ }
+    }
 
     async function saveUserData(user) {
       const userRef = doc(db, "users", user.uid);
@@ -9807,14 +9943,21 @@ function confirmLogout() {
         const snap = await tx.get(userRef);
         if (!snap.exists()) {
           isFirstTimeUser = true;
+          // New user's starting wallet balance = base signup bonus, PLUS an
+          // extra bonus if they arrived via a friend's referral link.
+          const startingBalance = SIGNUP_BONUS_WALLET + (validReferral ? REFERRED_SIGNUP_BONUS : 0);
           tx.set(userRef, {
             name: user.displayName || '',
             email: user.email || '',
             photoURL: user.photoURL || '',
-            walletBalance: SIGNUP_BONUS_WALLET,
+            walletBalance: startingBalance,
             referredBy: validReferral ? pendingReferrer : null,
             referrals: [],
             referralCount: 0,
+            referralLinkOpens: 0,        // how many times people opened THIS user's own referral link
+            referralPurchases: 0,        // how many of this user's referrals went on to pay for a template
+            referralEarnings: 0,         // total ₹ this user has earned from referrals so far
+            referralPurchaseRewarded: false, // internal flag: has THIS user's first UPI purchase already paid their referrer? (stops double-credit)
             wishlist: [],
             city: '',
             openCount: 0,
@@ -9846,6 +9989,10 @@ function confirmLogout() {
         }
       });
 
+      // Record the signup against the referrer's account for FUNNEL STATS
+      // only (how many people signed up via their link) — this does NOT
+      // pay the referrer any money. The ₹10 payout only happens later, on
+      // the friend's first real UPI purchase (see markReferralPurchase()).
       if (isFirstTimeUser && validReferral) {
         try {
           const referrerRef = doc(db, "users", pendingReferrer);
@@ -9854,18 +10001,82 @@ function confirmLogout() {
             if (!refSnap.exists()) return;
             const data = refSnap.data() || {};
             const referrals = Array.isArray(data.referrals) ? data.referrals : [];
-            if (referrals.includes(user.uid) || referrals.length >= MAX_REFERRALS) return;
+            if (referrals.includes(user.uid)) return;
             tx.set(referrerRef, {
-              walletBalance: increment(REFER_BONUS_WALLET),
               referrals: arrayUnion(user.uid),
               referralCount: referrals.length + 1
             }, { merge: true });
           });
-        } catch (e) { console.warn('Referral credit failed:', e); }
+        } catch (e) { console.warn('Referral signup tracking failed:', e); }
       }
+
+      // NOTE: the REFERRER's ₹10 bonus is intentionally NOT given here
+      // anymore. It used to be credited the moment a referred friend
+      // signed up, which anyone could fake with throwaway Google accounts.
+      // Now it's only credited when that friend actually pays for a
+      // template via UPI — see markReferralPurchase(), called from
+      // saveOrderToFirestore() further down this file.
 
       if (isFirstTimeUser) localStorage.setItem('referredBy_processed', '1');
       localStorage.removeItem('pendingReferrer');
+      return { isFirstTimeUser, validReferral };
+    }
+
+    // ============================================================
+    // # UPI ORDER SAVING + REFERRAL PURCHASE PAYOUT #
+    // Called from submitPayment() (the UPI/UTR payment screen).
+    // 1. Saves the order to Firestore (this did NOT exist before — the
+    //    old code only ever called a function of this name that was
+    //    never defined anywhere, so no UPI order was ever actually saved).
+    // 2. If the buyer was referred by someone, and this is the buyer's
+    //    first-ever completed order, pays that referrer their ₹10 bonus.
+    // ============================================================
+    async function saveOrderToFirestore(orderData) {
+      const user = getCurrentUser();
+      if (!user) throw new Error('NOT_LOGGED_IN');
+      await addDoc(collection(db, 'orders'), {
+        buyerUid: user.uid,
+        templateName: orderData.templateName || '',
+        price: orderData.price || '',
+        buyerName: orderData.buyerName || '',
+        buyerContact: orderData.buyerContact || '',
+        utr: orderData.utr || '',
+        paymentMethod: 'upi',
+        createdAt: serverTimestamp()
+      });
+      await markReferralPurchase(user.uid);
+    }
+
+    // Pays the REFERRER their ₹10 bonus, but only the first time their
+    // referred friend completes a real UPI purchase — never more than once
+    // per friend, and never once the referrer has hit MAX_REFERRALS payouts.
+    async function markReferralPurchase(buyerUid) {
+      try {
+        const buyerRef = doc(db, 'users', buyerUid);
+        const buyerSnap = await getDoc(buyerRef);
+        const buyerData = buyerSnap.exists() ? (buyerSnap.data() || {}) : {};
+        const referrerUid = buyerData.referredBy;
+        if (!referrerUid || buyerData.referralPurchaseRewarded) return; // not referred, or already paid out once
+
+        const referrerRef = doc(db, 'users', referrerUid);
+        let paid = false;
+        await runTransaction(db, async (tx) => {
+          const refSnap = await tx.get(referrerRef);
+          if (!refSnap.exists()) return;
+          const refData = refSnap.data() || {};
+          const purchases = Number(refData.referralPurchases || 0);
+          if (purchases >= MAX_REFERRALS) return; // cap reached — no more paid payouts
+          tx.set(referrerRef, {
+            walletBalance: increment(REFER_BONUS_WALLET),
+            referralPurchases: increment(1),
+            referralEarnings: increment(REFER_BONUS_WALLET)
+          }, { merge: true });
+          paid = true;
+        });
+        if (paid) {
+          await setDoc(buyerRef, { referralPurchaseRewarded: true }, { merge: true });
+        }
+      } catch (e) { console.warn('Referral purchase payout failed:', e); }
     }
 
     let walletUnsub = null;
@@ -9911,19 +10122,45 @@ function confirmLogout() {
         const paymentBal = document.getElementById('paymentWalletBalance');
         if (paymentBal) paymentBal.textContent = window.isAdminUser ? '∞' : wallet;
 
-        const count = Math.min(Number(data.referralCount || (Array.isArray(data.referrals) ? data.referrals.length : 0)), MAX_REFERRALS);
+        const paidCount = Math.min(Number(data.referralPurchases || 0), MAX_REFERRALS);
         const progress = document.getElementById('referralProgressText');
-        if (progress) progress.textContent = window.isAdminUser ? 'Unlimited admin account' : `${count}/${MAX_REFERRALS} rewarded referrals`;
+        if (progress) progress.textContent = window.isAdminUser ? 'Unlimited admin account' : `${paidCount}/${MAX_REFERRALS} rewarded referrals (friend made a purchase)`;
+
+        // Referral performance stats (Link Opens / Purchases / Earnings) —
+        // shown in both the profile Refer & Earn tab and the Wallet modal.
+        const opens = Number(data.referralLinkOpens || 0);
+        const purchases = Number(data.referralPurchases || 0);
+        const earnings = Number(data.referralEarnings || 0);
+        const opensEls = [document.getElementById('profileReferralOpens'), document.getElementById('walletReferralOpens')];
+        const purchasesEls = [document.getElementById('profileReferralPurchases'), document.getElementById('walletReferralPurchases')];
+        const earningsEls = [document.getElementById('profileReferralEarnings'), document.getElementById('walletReferralEarnings')];
+        opensEls.forEach(el => { if (el) el.textContent = opens; });
+        purchasesEls.forEach(el => { if (el) el.textContent = purchases; });
+        earningsEls.forEach(el => { if (el) el.textContent = '₹' + earnings; });
+
         updateDailyCheckinState(data);
       });
     }
 
+    // Works out which day of the 7-day cycle is next, and whether it's
+    // claimable right now (based on dailyCheckinAt + dailyCheckinStreakDay
+    // saved on the user's Firestore doc from their last claim).
     function getDailyCheckinState(data) {
       const raw = data && data.dailyCheckinAt;
-      if (!raw) return { available: true, remaining: 0 };
-      const last = raw && typeof raw.toMillis === 'function' ? raw.toMillis() : Number(raw || 0);
-      const remaining = Math.max(0, DAILY_CHECKIN_COOLDOWN_MS - (Date.now() - last));
-      return { available: remaining <= 0, remaining };
+      const lastMs = raw && typeof raw.toMillis === 'function' ? raw.toMillis() : Number(raw || 0);
+      const lastDay = Number((data && data.dailyCheckinStreakDay) || 0);
+
+      if (!lastMs || !lastDay) return { available: true, remaining: 0, nextDay: 1 }; // never claimed before
+
+      const elapsed = Date.now() - lastMs;
+      if (elapsed >= DAILY_CHECKIN_STREAK_BREAK_MS) {
+        return { available: true, remaining: 0, nextDay: 1 }; // missed a day — streak resets to Day 1
+      }
+      const nextDay = lastDay >= 7 ? 1 : lastDay + 1; // Day 7 done → loop back to Day 1
+      if (elapsed >= DAILY_CHECKIN_COOLDOWN_MS) {
+        return { available: true, remaining: 0, nextDay };
+      }
+      return { available: false, remaining: DAILY_CHECKIN_COOLDOWN_MS - elapsed, nextDay };
     }
 
     function formatCountdown(ms) {
@@ -9933,37 +10170,65 @@ function confirmLogout() {
       return `${h}h ${m}m`;
     }
 
-    function updateDailyCheckinState(data) {
+    // Draws the 7 day-cards (Day 1..Day 7) into both the profile tab and
+    // the wallet modal. Days before "today" show as claimed, "today" is
+    // tappable when available (or shows a countdown when on cooldown),
+    // and days after "today" are shown locked as a preview.
+    function renderDailyCheckinStrip(data) {
       const state = getDailyCheckinState(data || {});
-      ['dailyCheckinBtn','dailyCheckinBtnModal'].forEach(id => {
-        const b = document.getElementById(id);
-        if (!b) return;
-        b.disabled = !state.available;
-        b.textContent = state.available ? 'Claim' : `Wait ${formatCountdown(state.remaining)}`;
+      const html = DAILY_CHECKIN_REWARDS.map((amount, idx) => {
+        const dayNum = idx + 1;
+        let cls = 'checkin-day-card' + (dayNum === 7 ? ' cd-day-7' : '');
+        let stateLabel;
+        let clickable = false;
+        if (dayNum < state.nextDay) {
+          cls += ' is-done';
+          stateLabel = 'Claimed';
+        } else if (dayNum === state.nextDay) {
+          cls += ' is-today';
+          if (state.available) { stateLabel = 'Tap to claim'; clickable = true; }
+          else { stateLabel = 'Wait ' + formatCountdown(state.remaining); }
+        } else {
+          stateLabel = 'Locked';
+        }
+        return `<div class="${cls}"${clickable ? ' onclick="claimDailyCheckin()"' : ''}>` +
+          `<span class="cd-label">Day ${dayNum}</span>` +
+          `<span class="cd-amount">₹${amount}</span>` +
+          `<span class="cd-state">${stateLabel}</span></div>`;
+      }).join('');
+      ['dailyCheckinDaysProfile', 'dailyCheckinDaysModal'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.innerHTML = html;
       });
+    }
+
+    function updateDailyCheckinState(data) {
+      renderDailyCheckinStrip(data);
     }
 
     window.claimDailyCheckin = async function () {
       if (!window.isUserLoggedIn) { openLogin(); return; }
-      const statusIds = ['dailyCheckinStatus','dailyCheckinStatusModal'];
-      statusIds.forEach(id => { const e=document.getElementById(id); if(e) e.textContent='Claiming…'; });
+      const statusIds = ['dailyCheckinStatus', 'dailyCheckinStatusModal'];
+      statusIds.forEach(id => { const e = document.getElementById(id); if (e) e.textContent = 'Claiming…'; });
       try {
-        const reward = Math.floor(Math.random() * (DAILY_CHECKIN_MAX - DAILY_CHECKIN_MIN + 1)) + DAILY_CHECKIN_MIN;
         const userRef = doc(db, "users", window.currentUserUid);
+        let rewardGiven = 0;
         await runTransaction(db, async (tx) => {
           const snap = await tx.get(userRef);
           const data = snap.data() || {};
           const state = getDailyCheckinState(data);
           if (!state.available) throw new Error('COOLDOWN');
+          rewardGiven = DAILY_CHECKIN_REWARDS[state.nextDay - 1];
           tx.set(userRef, {
-            walletBalance: increment(reward),
+            walletBalance: increment(rewardGiven),
             dailyCheckinAt: serverTimestamp(),
-            lastDailyCheckinReward: reward
+            dailyCheckinStreakDay: state.nextDay,
+            lastDailyCheckinReward: rewardGiven
           }, { merge: true });
         });
-        statusIds.forEach(id => { const e=document.getElementById(id); if(e) e.textContent=`🎉 You received ₹${reward} wallet credit!`; });
+        statusIds.forEach(id => { const e = document.getElementById(id); if (e) e.textContent = `🎉 Day reward claimed: ₹${rewardGiven} added to wallet!`; });
       } catch (e) {
-        statusIds.forEach(id => { const el=document.getElementById(id); if(el) el.textContent=e.message==='COOLDOWN'?'⏳ Your next check-in is available after 24 hours.':'Could not claim right now. Please try again.'; });
+        statusIds.forEach(id => { const el = document.getElementById(id); if (el) el.textContent = e.message === 'COOLDOWN' ? '⏳ Come back tomorrow for your next day\'s reward.' : 'Could not claim right now. Please try again.'; });
       }
     };
 
@@ -9985,16 +10250,80 @@ function confirmLogout() {
     };
     window.shareReferLink = function () {
       const link = document.getElementById('referLinkInput')?.value || '';
-      const text = `Give ₹20 off to a friend and earn ₹10 Ditemps wallet credit: ${link}`;
+      const text = `Join Ditemps with my link and get ₹15 in signup bonuses! ${link}`;
       if (navigator.share) navigator.share({ title:'Ditemps Refer & Earn', text, url:link }).catch(()=>{});
       else window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
     };
     window.shareProfileReferLink = function () {
       const link = document.getElementById('profileReferLinkInput')?.value || '';
-      const text = `Give ₹20 off to a friend and earn ₹10 Ditemps wallet credit: ${link}`;
+      const text = `Join Ditemps with my link and get ₹15 in signup bonuses! ${link}`;
       if (navigator.share) navigator.share({ title:'Ditemps Refer & Earn', text, url:link }).catch(()=>{});
       else window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank');
     };
+
+    // ============================================================
+    // # WELCOME / REFERRAL BONUS POPUP #
+    // Shows the small "🎉 You've won ₹X!" popup(s) a few seconds after a
+    // brand-new user's very first login. Reuses ONE popup element for
+    // both messages — showRewardPopup() just swaps the emoji/title/text.
+    // ============================================================
+    let _rewardPopupQueue = [];
+    let _welcomePopupScheduled = false; // guard: saveUserData() is called from several places
+                                         // (Google popup, email login, redirect, and the main
+                                         // onAuthStateChanged handler) — this stops the welcome
+                                         // popup from being scheduled more than once per session.
+    function showRewardPopup(emoji, title, message, ctaLabel, ctaHref) {
+      document.getElementById('rewardPopupEmoji').textContent = emoji;
+      document.getElementById('rewardPopupTitle').textContent = title;
+      document.getElementById('rewardPopupMessage').textContent = message;
+      const cta = document.getElementById('rewardPopupCta');
+      cta.textContent = ctaLabel;
+      cta.dataset.href = ctaHref || '';
+      document.getElementById('rewardPopup').classList.add('active');
+    }
+    window.closeRewardPopup = function () {
+      document.getElementById('rewardPopup').classList.remove('active');
+      // If there's a second popup queued up (e.g. the ₹5 referral bonus,
+      // right after the ₹10 signup bonus), show it a moment after this one closes.
+      if (_rewardPopupQueue.length) {
+        const next = _rewardPopupQueue.shift();
+        setTimeout(() => showRewardPopup(next.emoji, next.title, next.message, next.ctaLabel), 500);
+      }
+    };
+    window.rewardPopupCtaClicked = function () {
+      closeRewardPopup();
+      // Both current messages point at the same place: the Refer & Earn
+      // section inside the Wallet popup.
+      setTimeout(() => { if (typeof window.openWalletModal === 'function') window.openWalletModal(); }, 350);
+    };
+
+    // Called once, right after a brand-new account is created (see
+    // handleAuthUser -> saveUserData). Queues 1 or 2 popups:
+    //   1) "You've won ₹10!" — always, for every new user
+    //   2) "You got ₹5 referral bonus!" — only if they came via a friend's link
+    // Shown a few seconds after login so it doesn't collide with the
+    // login sheet closing animation.
+    function scheduleWelcomeBonusPopups(wasReferred) {
+      if (_welcomePopupScheduled) return;
+      _welcomePopupScheduled = true;
+      _rewardPopupQueue = [];
+      if (wasReferred) {
+        _rewardPopupQueue.push({
+          emoji: '🎁',
+          title: `You got ₹${REFERRED_SIGNUP_BONUS} referral bonus!`,
+          message: 'A friend invited you — this extra bonus is on top of your signup bonus.',
+          ctaLabel: 'Refer & Earn'
+        });
+      }
+      setTimeout(() => {
+        showRewardPopup(
+          '🎉',
+          `You've won ₹${SIGNUP_BONUS_WALLET}!`,
+          'Refer your friends to earn more wallet credit.',
+          'Refer & Earn'
+        );
+      }, 3000); // "a few seconds after login"
+    }
 
     function hideWalletModal() { document.getElementById('walletModal').classList.remove('active'); }
     window.openWalletModal = function () {
@@ -10113,7 +10442,8 @@ function confirmLogout() {
       setDoc, addDoc, getDoc, getDocs, onSnapshot, runTransaction,
       increment, arrayUnion, arrayRemove, serverTimestamp,
       getCurrentUser, deleteUser, sendEmailVerification,
-      reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider
+      reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider,
+      saveOrderToFirestore
     });
   </script>
 
@@ -10145,9 +10475,6 @@ window.showDitempsLandingPage = function() {
   window.scrollTo({ top: 0, behavior: 'instant' });
 };
 </script>
-
-</script>
-
 
 <script id="ditemps-visible-animations-js">
 (function(){
