@@ -387,6 +387,7 @@
     font-size: 35px;
     overflow: hidden;
     border-radius: inherit;
+    position: relative;
   }
 
   .card-image-box img {
@@ -395,6 +396,32 @@
     object-fit: cover;
     display: block;
   }
+
+  /* Corner "like" heart shown on every template card's image, top-right */
+  .card-like-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 2;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(11, 10, 23, 0.55);
+    color: #fff;
+    font-size: 15px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    transition: transform .15s ease, background .15s ease, color .15s ease;
+  }
+  .card-like-btn:hover { transform: scale(1.08); }
+  .card-like-btn.active { color: #E85B86; background: rgba(255,255,255,0.88); }
 
   .card-info {
     padding: 10px;
@@ -739,6 +766,42 @@
     object-fit: cover;
     object-position: top;
     display: block;
+  }
+
+  .detail-hero-wrap {
+    position: relative;
+  }
+
+  .detail-hero-heart {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 3;
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(11, 10, 23, 0.55);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    color: #fff;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    transition: transform .15s ease, color .15s ease, background .15s ease;
+  }
+
+  .detail-hero-heart:hover {
+    transform: scale(1.08);
+  }
+
+  .detail-hero-heart.active {
+    color: #E85B86;
+    background: rgba(232, 91, 134, 0.22);
   }
 
   .detail-name {
@@ -2099,8 +2162,27 @@ body.ditemps-landing-active > .modal-overlay.active { z-index:1000010 !important
 .detail-action-row { display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px; }
 .detail-action-row button { border:1px solid rgba(255,255,255,.15); border-radius:22px; padding:8px 13px; cursor:pointer; font-weight:700; background:rgba(255,255,255,.05); color:inherit; }
 .detail-like-btn.active, .wishlist-btn.active { background:rgba(232,91,134,.14); border-color:rgba(232,91,134,.45); }
-.detail-cta-row { display:flex; gap:10px; flex-wrap:wrap; margin:8px 0 20px; }
+.detail-cta-row { display:flex; gap:10px; flex-wrap:wrap; margin:8px 0 20px; align-items:center; }
 .detail-primary-btn, .detail-secondary-btn { border:0; border-radius:24px; padding:11px 17px; font-weight:800; cursor:pointer; }
+.detail-cta-heart {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.15);
+  background: rgba(255,255,255,.08);
+  color: inherit;
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: transform .15s ease, color .15s ease, background .15s ease, border-color .15s ease;
+}
+.detail-cta-heart:hover { transform: scale(1.06); }
+.detail-cta-heart.active { color:#E85B86; background:rgba(232,91,134,.14); border-color:rgba(232,91,134,.45); }
 .detail-primary-btn { background:#111; color:#fff; }
 .detail-secondary-btn { background:rgba(255,255,255,.08); color:inherit; border:1px solid rgba(255,255,255,.15); }
 .detail-screenshots { margin:18px 0 24px; }
@@ -2148,7 +2230,7 @@ body.ditemps-landing-active > .modal-overlay.active { z-index:1000010 !important
 .detail-mini-body h4 { margin:3px 0; font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 .detail-mini-body p { margin:0 0 6px; color:var(--text-muted); font-size:10px; line-height:1.3; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
 .detail-mini-body div { display:flex; justify-content:space-between; gap:5px; font-size:10px; }
-@media (max-width:650px){ .detail-info-grid,.detail-review-summary,.detail-platform-grid,.detail-offer-section { grid-template-columns:1fr; } .detail-mini-grid { grid-template-columns:1fr; } .detail-cta-row button { flex:1 1 100%; } }
+@media (max-width:650px){ .detail-info-grid,.detail-review-summary,.detail-platform-grid,.detail-offer-section { grid-template-columns:1fr; } .detail-mini-grid { grid-template-columns:1fr; } .detail-cta-row button { flex:1 1 100%; } .detail-cta-row .detail-cta-heart { flex:0 0 44px; width:44px; } }
 </style>
 
 <style id="ditemps-profile-page-overrides">
@@ -3766,6 +3848,13 @@ html.ditemps-dark .refer-fab {
   border-radius: 28px !important;
 }
 
+/* Like heart now sits beside the price/Buy-Personalise button in the footer bar */
+.detail-buy-actions #detailLikeBtnBottom {
+  width: 44px !important;
+  height: 44px !important;
+  flex: 0 0 44px !important;
+}
+
 /* Keep the two bottom buttons compact and balanced on mobile */
 .detail-bottom-bar button {
   min-width: 0 !important;
@@ -4406,14 +4495,16 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
     <div id="detail-section-wrapper" style="display:none; margin-top: 16px;">
       <button class="back-btn" onclick="closeTemplateDetail()">← Back</button>
 
-      <div class="detail-hero" id="detailHero">🎁</div>
+      <div class="detail-hero-wrap">
+        <div class="detail-hero" id="detailHero">🎁</div>
+        <button class="detail-hero-heart" id="detailLikeBtn" onclick="likeCurrentTemplate()" title="Like" aria-label="Like">♡</button>
+      </div>
 
       <h2 class="detail-name" id="detailName">Template Name</h2>
       <div class="detail-badges" id="detailBadges"></div>
       <p class="detail-desc" id="detailDesc"></p>
       <div class="detail-metrics" id="detailMetrics"></div>
       <div class="detail-action-row">
-        <button class="detail-like-btn" id="detailLikeBtn" onclick="likeCurrentTemplate()">♡ Like</button>
         <button class="wishlist-btn" id="detailWishlistBtn" onclick="toggleCurrentWishlist()">♡ Save to Wishlist</button>
         <button class="detail-share-btn" id="detailShareBtn" onclick="shareCurrentTemplate()">↗ Share</button>
       </div>
@@ -4494,6 +4585,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
       <div class="detail-footer-bar">
         <span class="price" id="detailPrice"></span>
         <div class="detail-buy-actions">
+          <button class="detail-cta-heart" id="detailLikeBtnBottom" onclick="likeCurrentTemplate()" title="Like" aria-label="Like">♡</button>
           <button class="buy-btn" id="detailBuyBtn">Buy Now</button>
         </div>
       </div>
@@ -6532,7 +6624,8 @@ var qrcode = function() {
     // Standard price for every paid template: ₹100
     // ============================================================
     const paidTemplates = [
-      { name: "Cute Birthday Surprise (With Passcode)", category: "Birthday", emoji: "🔒", image: "https://files.catbox.moe/18g5a5.png", price: "₹100", offer: true, offerPercent: 50, desc: "A passcode-locked birthday surprise with cute cat reactions, a heartfelt wish, and a sweet 'will you be mine' finish.", isViral: true, downloadUrl: "https://soravtemplates.github.io/Temp3/" }
+      { name: "Cute Birthday Surprise (With Passcode)", category: "Birthday", emoji: "🔒", image: "https://files.catbox.moe/18g5a5.png", price: "₹100", offer: true, offerPercent: 50, desc: "A passcode-locked birthday surprise with cute cat reactions, a heartfelt wish, and a sweet 'will you be mine' finish.", isViral: true, downloadUrl: "https://soravtemplates.github.io/Temp3/" },
+      { name: "A Little Birthday Surprise", category: "Birthday", emoji: "🎂", image: "", price: "₹100", offer: true, offerPercent: 50, desc: "An interactive birthday journey with a secret code, balloon pop, cake, memories, quiz, scratch reveal, personal letter and a final celebration.", isViral: true, downloadUrl: "https://soravtemps.github.io/Temp6/" }
     ];
 
     // ============================================================
@@ -6899,11 +6992,7 @@ var qrcode = function() {
           </div>`;
 
         const openCard = () => {
-          if ((kind === 'paid' || kind === 'premium') && !window.isUserLoggedIn) {
-            openLogin();
-          } else {
-            openTemplateDetail(item, kind);
-          }
+          openTemplateDetail(item, kind);
         };
         card.addEventListener('click', () => openCard());
         const view = card.querySelector('.view-btn');
@@ -6930,9 +7019,10 @@ var qrcode = function() {
         const priceLabel = getPriceLabel(item, kind);
         const badgeClass = kind === 'free' ? 'free' : (kind === 'premium' ? 'premium' : (kind === 'cards' ? 'free' : 'paid'));
         const badgeText = kind === 'free' ? 'FREE' : (kind === 'premium' ? 'PREMIUM' : (kind === 'cards' ? 'CARDS' : 'PAID'));
+        const cardIsLiked = isTemplateLikedByUser(item.name);
 
         card.innerHTML = `
-          <div class="card-image-box">${item.image ? `<img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async">` : (item.emoji || '🎁')}</div>
+          <div class="card-image-box">${item.image ? `<img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async">` : (item.emoji || '🎁')}<button class="card-like-btn${cardIsLiked ? ' active' : ''}" type="button" title="Like" aria-label="Like">${cardIsLiked ? '♥' : '♡'}</button></div>
           <div class="card-info">
             <div class="badge-row">
               <span class="badge ${badgeClass}">${badgeText}</span>
@@ -6955,20 +7045,18 @@ var qrcode = function() {
         `;
 
         const openCard = () => {
-          if ((kind === 'paid' || kind === 'premium') && !window.isUserLoggedIn) {
-            openLogin();
-          } else {
-            openTemplateDetail(item, kind);
-          }
+          openTemplateDetail(item, kind);
         };
         card.addEventListener('click', (e) => {
-          if (e.target.closest('.view-btn')) return;
+          if (e.target.closest('.view-btn') || e.target.closest('.card-like-btn')) return;
           openCard();
         });
         card.querySelector('.view-btn').onclick = (e) => {
           e.stopPropagation();
           openCard();
         };
+        const cardLikeBtn = card.querySelector('.card-like-btn');
+        if (cardLikeBtn) cardLikeBtn.onclick = (e) => likeTemplateFromCard(item, cardLikeBtn, e);
         card.style.cursor = 'pointer';
         grid.appendChild(card);
       });
@@ -7199,9 +7287,10 @@ var qrcode = function() {
         const priceLabel = getPriceLabel(item, kind);
         const badgeClass = kind === 'free' ? 'free' : (kind === 'premium' ? 'premium' : (kind === 'cards' ? 'free' : 'paid'));
         const badgeText = kind === 'free' ? 'FREE' : (kind === 'premium' ? 'PREMIUM' : (kind === 'cards' ? 'CARDS' : 'PAID'));
+        const cardIsLiked = isTemplateLikedByUser(item.name);
 
         card.innerHTML = `
-          <div class="card-image-box">${item.image ? `<img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async">` : (item.emoji || '🎁')}</div>
+          <div class="card-image-box">${item.image ? `<img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async">` : (item.emoji || '🎁')}<button class="card-like-btn${cardIsLiked ? ' active' : ''}" type="button" title="Like" aria-label="Like">${cardIsLiked ? '♥' : '♡'}</button></div>
           <div class="card-info">
             <div class="badge-row">
               <span class="badge ${badgeClass}">${badgeText}</span>
@@ -7218,20 +7307,18 @@ var qrcode = function() {
         `;
 
         const openCard = () => {
-          if ((kind === 'paid' || kind === 'premium') && !window.isUserLoggedIn) {
-            openLogin();
-          } else {
-            openTemplateDetail(item, kind);
-          }
+          openTemplateDetail(item, kind);
         };
         card.addEventListener('click', (e) => {
-          if (e.target.closest('.view-btn')) return;
+          if (e.target.closest('.view-btn') || e.target.closest('.card-like-btn')) return;
           openCard();
         });
         card.querySelector('.view-btn').onclick = (e) => {
           e.stopPropagation();
           openCard();
         };
+        const cardLikeBtn = card.querySelector('.card-like-btn');
+        if (cardLikeBtn) cardLikeBtn.onclick = (e) => likeTemplateFromCard(item, cardLikeBtn, e);
         card.style.cursor = 'pointer';
         grid.appendChild(card);
       });
@@ -7245,6 +7332,9 @@ var qrcode = function() {
     // Payment-aware Personalise action: paid/premium templates must go
     // through the same payment gate as the bottom CTA before customization.
     function handlePersonaliseClick(item, kind) {
+      // Login is required to personalise ANY template (free, paid, or
+      // premium) — but browsing/viewing a template never requires login.
+      if (!window.isUserLoggedIn) { openLogin(); return; }
       const premiumUntilValue = window.currentUserPremiumUntil && typeof window.currentUserPremiumUntil.toMillis === 'function'
         ? window.currentUserPremiumUntil.toMillis()
         : Number(window.currentUserPremiumUntil || 0);
@@ -8867,6 +8957,38 @@ var qrcode = function() {
       }
     }
 
+    // Whether the current visitor has already liked a template by name —
+    // shared by the detail page heart AND the small corner heart on grid cards.
+    function isTemplateLikedByUser(name) {
+      if (!name) return false;
+      return likedTemplateCache.has(name) || !!localStorage.getItem('ditemps_liked_' + encodeURIComponent(name));
+    }
+
+    // Like button shown in the top-right corner of a template card in the
+    // browse grids (All/Premium/Surprise/Cards). Mirrors likeCurrentTemplate()
+    // below but works for any card, not just the open detail page.
+    async function likeTemplateFromCard(item, btnEl, e) {
+      if (e) e.stopPropagation();
+      if (!item || !item.name) return;
+      const name = item.name;
+      if (isTemplateLikedByUser(name)) {
+        if (btnEl) { btnEl.classList.add('active'); btnEl.textContent = '♥'; }
+        return;
+      }
+      try {
+        const statsRef = doc(db, 'templateStats', encodeURIComponent(name));
+        await setDoc(statsRef, { name, likes: increment(1), updatedAt: serverTimestamp() }, { merge: true });
+        localStorage.setItem('ditemps_liked_' + encodeURIComponent(name), '1');
+        likedTemplateCache.add(name);
+        const current = templateStatsCache.get(name) || { views: 0, likes: 0 };
+        current.likes += 1;
+        templateStatsCache.set(name, current);
+        updateRenderedTemplateStats(item);
+        if (btnEl) { btnEl.classList.add('active'); btnEl.textContent = '♥'; }
+        if (currentDetailItem && currentDetailItem.name === name) updateLikeButton();
+      } catch (err) { console.error(err); }
+    }
+
     async function likeCurrentTemplate() {
       if (!currentDetailItem) return;
       const name = currentDetailItem.name;
@@ -8886,11 +9008,14 @@ var qrcode = function() {
     }
 
     function updateLikeButton() {
-      const btn = document.getElementById('detailLikeBtn');
-      if (!btn || !currentDetailItem) return;
+      const btns = [document.getElementById('detailLikeBtn'), document.getElementById('detailLikeBtnBottom')].filter(Boolean);
+      if (!btns.length || !currentDetailItem) return;
       const liked = likedTemplateCache.has(currentDetailItem.name) || localStorage.getItem('ditemps_liked_' + encodeURIComponent(currentDetailItem.name));
-      btn.classList.toggle('active', !!liked);
-      btn.textContent = liked ? '♥ Liked' : '♡ Like';
+      btns.forEach(btn => {
+        btn.classList.toggle('active', !!liked);
+        btn.textContent = liked ? '♥' : '♡';
+        btn.title = liked ? 'Liked' : 'Like';
+      });
     }
 
     async function toggleCurrentWishlist() {
