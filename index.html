@@ -4676,14 +4676,16 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
       </div>
 
       <button id="payUpiBtn" onclick="payViaUPI('gpay')" style="display:flex; align-items:center; justify-content:center; gap:8px; background:#fff; color:#4285F4; font-weight:800;">
-        <span style="width:18px; height:18px; border-radius:50%; background:conic-gradient(#4285F4 0 25%, #34A853 25% 50%, #FBBC05 50% 75%, #EA4335 75% 100%); display:inline-block;"></span>
+        <img src="https://cdn.simpleicons.org/googlepay" alt="" style="width:20px; height:20px;" onerror="this.replaceWith(Object.assign(document.createElement('span'),{style:'width:18px;height:18px;border-radius:50%;background:conic-gradient(#4285F4 0 25%,#34A853 25% 50%,#FBBC05 50% 75%,#EA4335 75% 100%);display:inline-block;'}))">
         Google Pay
       </button>
       <button id="payPhonePeBtn" onclick="payViaUPI('phonepe')" style="display:flex; align-items:center; justify-content:center; gap:8px; background:#5f259f; color:#fff; font-weight:800;">
-        📱 PhonePe
+        <img src="https://cdn.simpleicons.org/phonepe/ffffff" alt="" style="width:20px; height:20px;" onerror="this.replaceWith('📱')">
+        PhonePe
       </button>
       <button id="payPaytmBtn" onclick="payViaUPI('paytm')" style="display:flex; align-items:center; justify-content:center; gap:8px; background:#00baf2; color:#fff; font-weight:800;">
-        💠 Paytm
+        <img src="https://cdn.simpleicons.org/paytm/ffffff" alt="" style="width:20px; height:20px;" onerror="this.replaceWith('💠')">
+        Paytm
       </button>
       <button id="payOtherBtn" onclick="payViaUPI('other')" class="btn-secondary" style="margin-top:0;">Other UPI App</button>
       <p class="status-text" style="margin-top:6px;">The app will open with the amount pre-filled for your UPI ID. Make the payment, then come back and enter the transaction ID below.</p>
@@ -4698,7 +4700,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
       <input type="text" id="payUtr" placeholder="e.g. 123456789012" inputmode="numeric" autocomplete="off" maxlength="12" minlength="12" pattern="\d{12}">
 
       
-      <div id="utrLengthHint" class="status-text" style="margin-top:4px; font-size:11px;">
+      <div id="utrLengthHint" class="status-text" style="margin-top:4px; font-size:11px; display:none;">
         UTR: 0/12 digits
       </div>
 <button class="generate-btn" id="paymentConfirmBtn" onclick="submitPayment()">I've Paid — Continue</button>
@@ -7938,6 +7940,9 @@ var qrcode = function() {
     if (utrField) {
       utrField.addEventListener('input', () => {
         utrField.value = utrField.value.replace(/\D/g, '').slice(0, 12);
+        // Digit-count hint is intentionally kept hidden from the user (see
+        // #utrLengthHint's display:none) — it still updates in the
+        // background in case it's needed for debugging, but is never shown.
         const hint = document.getElementById('utrLengthHint');
         if (!hint) return;
         if (utrField.value.length === 12) {
@@ -8109,9 +8114,12 @@ var qrcode = function() {
       // API). The admin still cross-checks each UTR against the UPI app
       // before fulfilling an order (see Admin → Orders).
       if (!/^\d+$/.test(utr) || utr.length !== UTR_LENGTH) {
-        utrInput.setCustomValidity(`UTR must be exactly ${UTR_LENGTH} digits.`);
+        // Deliberately generic: we don't tell the user this is a 12-digit
+        // format check, so they can't work out the rule and try to fake a
+        // UTR that merely satisfies the digit count without a real payment.
+        utrInput.setCustomValidity('Payment not received yet.');
         utrInput.reportValidity();
-        statusText.textContent = `UTR must be exactly ${UTR_LENGTH} digits.`;
+        statusText.textContent = 'Payment not received yet. Please complete the UPI payment and enter the transaction ID / UTR shown in your UPI app.';
         return;
       }
 
