@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://soravtemps.github.io/Likesorav/sitemap.xml
