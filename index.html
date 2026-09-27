@@ -2213,6 +2213,17 @@ body.ditemps-landing-active > .modal-overlay.active { z-index:1000010 !important
 .detail-review p { margin:5px 0; font-size:12px; line-height:1.45; }
 .helpful-btn { border:0; background:none; color:var(--text-muted); padding:0; font-size:11px; cursor:pointer; }
 .detail-empty-reviews { color:var(--text-muted); font-size:12px; padding:10px 0; }
+#rateStarRow span {
+  color: #fff;
+  -webkit-text-stroke: 0.6px var(--accent-gold);
+  text-shadow: 0 0 0 var(--accent-gold);
+  cursor: pointer;
+  transition: transform .15s ease;
+  user-select: none;
+}
+#rateStarRow span.active { color: var(--accent-gold); -webkit-text-stroke: 0.6px var(--accent-gold); }
+#rateStarRow span:hover { transform: scale(1.15); }
+.detail-rate-btn { display:inline-block; margin-top:10px; border:1px solid var(--accent-gold); color:var(--accent-gold); background:none; padding:8px 14px; border-radius:99px; font-size:12px; font-weight:700; cursor:pointer; }
 .detail-platform-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-top:12px; }
 .detail-platform-grid div { padding:12px; border-radius:13px; background:rgba(255,255,255,.035); }
 .detail-platform-grid b, .detail-platform-grid span, .detail-offer-section b, .detail-offer-section span { display:block; }
@@ -4197,10 +4208,10 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
       <a href="javascript:void(0)" id="menu-about" onclick="filterMenu('about')">About Us</a>
       <a href="javascript:void(0)" id="menu-admin" onclick="filterMenu('admin')" style="display:none;">Admin</a>
     </div>
+    <div id="navWalletChip" class="ditemps-wallet-chip" style="display:none;" aria-label="Website wallet balance">₹<span id="navWalletBalance">0</span></div>
     <button id="navUserChip" class="ditemps-nav-profile" type="button" onclick="openSettings()" aria-label="Open profile" style="display:none;">
       <img id="navUserPhoto" src="" alt="Profile">
     </button>
-    <div id="navWalletChip" class="ditemps-wallet-chip" style="display:none;" aria-label="Website wallet balance">₹<span id="navWalletBalance">0</span></div>
   </nav>
 
   <!-- SuperProfile Avatar Circle Header -->
@@ -4497,7 +4508,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
 
       <div class="detail-hero-wrap">
         <div class="detail-hero" id="detailHero">🎁</div>
-        <button class="detail-hero-heart" id="detailLikeBtn" onclick="likeCurrentTemplate()" title="Like" aria-label="Like">♡</button>
+        <button class="detail-hero-heart" id="detailLikeBtn" onclick="toggleCurrentWishlist()" title="Add to wishlist" aria-label="Add to wishlist">♡</button>
       </div>
 
       <h2 class="detail-name" id="detailName">Template Name</h2>
@@ -4505,7 +4516,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
       <p class="detail-desc" id="detailDesc"></p>
       <div class="detail-metrics" id="detailMetrics"></div>
       <div class="detail-action-row">
-        <button class="wishlist-btn" id="detailWishlistBtn" onclick="toggleCurrentWishlist()">♡ Save to Wishlist</button>
+        <button class="wishlist-btn" id="detailThumbLikeBtn" onclick="likeCurrentTemplate()" title="Like this template" aria-label="Like this template">👍 Like</button>
         <button class="detail-share-btn" id="detailShareBtn" onclick="shareCurrentTemplate()">↗ Share</button>
       </div>
 
@@ -4547,6 +4558,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
         <div class="detail-section-heading-row"><div><div class="detail-info-eyebrow">REVIEWS</div><h3>What people think</h3></div><span id="detailReviewCountLabel">0 reviews</span></div>
         <div class="detail-review-summary" id="detailReviewSummary"></div>
         <div class="detail-review-list" id="detailReviewList"></div>
+        <button type="button" class="detail-rate-btn" id="detailRateBtn" onclick="openRateTemplateModal(currentDetailItem)">★ Rate this template</button>
       </section>
 
       <section class="detail-platform-section">
@@ -4585,7 +4597,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
       <div class="detail-footer-bar">
         <span class="price" id="detailPrice"></span>
         <div class="detail-buy-actions">
-          <button class="detail-cta-heart" id="detailLikeBtnBottom" onclick="likeCurrentTemplate()" title="Like" aria-label="Like">♡</button>
+          <button class="detail-cta-heart" id="detailLikeBtnBottom" onclick="toggleCurrentWishlist()" title="Add to wishlist" aria-label="Add to wishlist">♡</button>
           <button class="buy-btn" id="detailBuyBtn">Buy Now</button>
         </div>
       </div>
@@ -5092,6 +5104,24 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
       <p id="rewardPopupMessage">Refer your friends to earn more.</p>
       <button class="generate-btn" id="rewardPopupCta" style="margin-top:14px;" onclick="rewardPopupCtaClicked()">Refer &amp; Earn</button>
       <button class="modal-close" onclick="closeRewardPopup()">Not now</button>
+    </div>
+  </div>
+
+  <!-- Rate-this-template popup: shown a few seconds after opening a
+       template's detail page (once per template, unless already rated).
+       Also reachable any time via the "★ Rate this template" button in
+       the reviews section. -->
+  <div class="modal-overlay" id="rateTemplateModal">
+    <div class="modal-box" style="max-width:360px;">
+      <h3>Rate this template</h3>
+      <p style="text-align:center;color:var(--text-muted);font-size:12px;margin:-8px 0 14px;">How was your experience with <b id="rateModalTemplateName">this template</b>?</p>
+      <div id="rateStarRow" style="display:flex;justify-content:center;gap:8px;font-size:32px;margin-bottom:14px;">
+        <span data-star="1" onclick="rateStarClicked(this)">☆</span><span data-star="2" onclick="rateStarClicked(this)">☆</span><span data-star="3" onclick="rateStarClicked(this)">☆</span><span data-star="4" onclick="rateStarClicked(this)">☆</span><span data-star="5" onclick="rateStarClicked(this)">☆</span>
+      </div>
+      <textarea id="rateDescriptionInput" placeholder="Tell others what you liked (optional)" maxlength="300"></textarea>
+      <div id="rateModalStatus" style="font-size:12px;min-height:16px;margin:6px 0;text-align:center;"></div>
+      <button class="generate-btn" onclick="submitTemplateReview()">Submit Rating</button>
+      <button class="modal-close" onclick="closeRateTemplateModal()">Not now</button>
     </div>
   </div>
 
@@ -6982,9 +7012,9 @@ var qrcode = function() {
             <h3>${escapeHtml(item.name || 'Template')}</h3>
             <p>${escapeHtml(item.desc || '')}</p>
             <div class="card-metrics">
-              <span class="card-metric rating">★ ${Number(item.rating || 0).toFixed(1)}</span>
-              <span class="card-metric">♡ ${formatMetric((templateStatsCache.get(item.name) || {}).likes || 0)}</span>
-              <span class="card-metric">◉ ${formatMetric((templateStatsCache.get(item.name) || {}).views || 0)}</span>
+              <span class="card-metric rating">★ ${getCombinedStats(item).rating.toFixed(1)}</span>
+              <span class="card-metric" data-template-stat-name="${escapeHtml(item.name)}" data-template-stat-type="likes">♡ ${formatMetric(getCombinedStats(item).likes)}</span>
+              <span class="card-metric" data-template-stat-name="${escapeHtml(item.name)}" data-template-stat-type="views">◉ ${formatMetric(getCombinedStats(item).views)}</span>
               ${isTrending(item) ? '<span class="card-metric trending-badge">🔥 Trending</span>' : ''}
             </div>
             <div class="card-footer">
@@ -7021,10 +7051,10 @@ var qrcode = function() {
         const priceLabel = getPriceLabel(item, kind);
         const badgeClass = kind === 'free' ? 'free' : (kind === 'premium' ? 'premium' : (kind === 'cards' ? 'free' : 'paid'));
         const badgeText = kind === 'free' ? 'FREE' : (kind === 'premium' ? 'PREMIUM' : (kind === 'cards' ? 'CARDS' : 'PAID'));
-        const cardIsLiked = isTemplateLikedByUser(item.name);
+        const cardIsWished = wishlistCache.has(item.name);
 
         card.innerHTML = `
-          <div class="card-image-box">${item.image ? `<img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async">` : (item.emoji || '🎁')}<button class="card-like-btn${cardIsLiked ? ' active' : ''}" type="button" title="Like" aria-label="Like">${cardIsLiked ? '♥' : '♡'}</button></div>
+          <div class="card-image-box">${item.image ? `<img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async">` : (item.emoji || '🎁')}<button class="card-like-btn${cardIsWished ? ' active' : ''}" type="button" data-template-name="${escapeHtml(item.name)}" title="Add to wishlist" aria-label="Add to wishlist">${cardIsWished ? '♥' : '♡'}</button></div>
           <div class="card-info">
             <div class="badge-row">
               <span class="badge ${badgeClass}">${badgeText}</span>
@@ -7034,9 +7064,9 @@ var qrcode = function() {
             <h3>${item.name}</h3>
             <p>${item.desc || ''}</p>
             <div class="card-metrics">
-              <span class="card-metric rating">★ ${Number(item.rating || 0).toFixed(1)}</span>
-              <span class="card-metric" data-template-stat-name="${escapeHtml(item.name)}" data-template-stat-type="likes">♡ ${formatMetric((templateStatsCache.get(item.name) || {}).likes || 0)}</span>
-              <span class="card-metric" data-template-stat-name="${escapeHtml(item.name)}" data-template-stat-type="views">◉ ${formatMetric((templateStatsCache.get(item.name) || {}).views || 0)}</span>
+              <span class="card-metric rating">★ ${getCombinedStats(item).rating.toFixed(1)}</span>
+              <span class="card-metric" data-template-stat-name="${escapeHtml(item.name)}" data-template-stat-type="likes">♡ ${formatMetric(getCombinedStats(item).likes)}</span>
+              <span class="card-metric" data-template-stat-name="${escapeHtml(item.name)}" data-template-stat-type="views">◉ ${formatMetric(getCombinedStats(item).views)}</span>
               ${isTrending(item) ? '<span class="card-metric trending-badge">🔥 Trending</span>' : ''}
             </div>
             <div class="card-footer">
@@ -7058,7 +7088,7 @@ var qrcode = function() {
           openCard();
         };
         const cardLikeBtn = card.querySelector('.card-like-btn');
-        if (cardLikeBtn) cardLikeBtn.onclick = (e) => likeTemplateFromCard(item, cardLikeBtn, e);
+        if (cardLikeBtn) cardLikeBtn.onclick = (e) => toggleWishlistFromCard(item, cardLikeBtn, e);
         card.style.cursor = 'pointer';
         grid.appendChild(card);
       });
@@ -7289,10 +7319,10 @@ var qrcode = function() {
         const priceLabel = getPriceLabel(item, kind);
         const badgeClass = kind === 'free' ? 'free' : (kind === 'premium' ? 'premium' : (kind === 'cards' ? 'free' : 'paid'));
         const badgeText = kind === 'free' ? 'FREE' : (kind === 'premium' ? 'PREMIUM' : (kind === 'cards' ? 'CARDS' : 'PAID'));
-        const cardIsLiked = isTemplateLikedByUser(item.name);
+        const cardIsWished = wishlistCache.has(item.name);
 
         card.innerHTML = `
-          <div class="card-image-box">${item.image ? `<img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async">` : (item.emoji || '🎁')}<button class="card-like-btn${cardIsLiked ? ' active' : ''}" type="button" title="Like" aria-label="Like">${cardIsLiked ? '♥' : '♡'}</button></div>
+          <div class="card-image-box">${item.image ? `<img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async">` : (item.emoji || '🎁')}<button class="card-like-btn${cardIsWished ? ' active' : ''}" type="button" data-template-name="${escapeHtml(item.name)}" title="Add to wishlist" aria-label="Add to wishlist">${cardIsWished ? '♥' : '♡'}</button></div>
           <div class="card-info">
             <div class="badge-row">
               <span class="badge ${badgeClass}">${badgeText}</span>
@@ -7320,7 +7350,7 @@ var qrcode = function() {
           openCard();
         };
         const cardLikeBtn = card.querySelector('.card-like-btn');
-        if (cardLikeBtn) cardLikeBtn.onclick = (e) => likeTemplateFromCard(item, cardLikeBtn, e);
+        if (cardLikeBtn) cardLikeBtn.onclick = (e) => toggleWishlistFromCard(item, cardLikeBtn, e);
         card.style.cursor = 'pointer';
         grid.appendChild(card);
       });
@@ -7385,13 +7415,15 @@ var qrcode = function() {
       if (createBtn) createBtn.onclick = () => handlePersonaliseClick(item, kind);
       const detailMetrics = document.getElementById('detailMetrics');
       if (detailMetrics) {
+        const combinedInitial = getCombinedStats(item);
         detailMetrics.innerHTML = `
-          <span class="detail-metric rating">★ ${Number(item.rating || 0).toFixed(1)} (${Number(item.reviewCount || 0)} reviews)</span>
-          <span class="detail-metric">♡ ${formatMetric((templateStatsCache.get(item.name) || {}).likes || 0)} likes</span>
-          <span class="detail-metric">◉ ${formatMetric((templateStatsCache.get(item.name) || {}).views || 0)} views</span>
+          <span class="detail-metric rating">★ ${combinedInitial.rating.toFixed(1)} (${combinedInitial.reviewCount} reviews)</span>
+          <span class="detail-metric" style="cursor:pointer;" onclick="likeCurrentTemplate()" title="Tap to like">♡ ${formatMetric(combinedInitial.likes)} likes</span>
+          <span class="detail-metric">◉ ${formatMetric(combinedInitial.views)} views</span>
           ${isTrending(item) ? '<span class="detail-metric">🔥 Trending</span>' : ''}`;
       }
       trackTemplateView(item);
+      fetchAndRenderRealReviews(item);
 
       const premiumUntilValue = window.currentUserPremiumUntil && typeof window.currentUserPremiumUntil.toMillis === 'function'
         ? window.currentUserPremiumUntil.toMillis()
@@ -7458,6 +7490,10 @@ var qrcode = function() {
           previewSettled = true;
           if (previewLoader) previewLoader.classList.add('hidden');
           endPrepTask();
+          // Only start the "rate this template" countdown once the page has
+          // actually finished loading — never while the loading screen above
+          // is still showing.
+          setTimeout(() => { if (currentDetailItem && currentDetailItem.name === item.name) maybeShowRatePopup(item); }, 10000);
         };
         liveFrame.addEventListener('load', finishPreview, { once: true });
         liveFrame.addEventListener('error', finishPreview, { once: true });
@@ -7470,6 +7506,9 @@ var qrcode = function() {
         if (previewLoader) previewLoader.classList.add('hidden');
         liveFrame.src = '';
         liveWrap.style.display = 'none';
+        // No live preview to load here, so there's no loading screen to wait
+        // out — just wait the usual 10 seconds after the page opened.
+        setTimeout(() => { if (currentDetailItem && currentDetailItem.name === item.name) maybeShowRatePopup(item); }, 10000);
       }
 
       renderDetailDiscovery(item);
@@ -7532,7 +7571,7 @@ var qrcode = function() {
         const price = getPriceLabel(item, kind || 'free');
         return `<article class="detail-mini-card" data-detail-template="${escapeDetailText(item.name)}">
           <div class="detail-mini-image">${item.image ? `<img src="${escapeDetailText(item.image)}" alt="${escapeDetailText(item.name)}" loading="lazy">` : escapeDetailText(item.emoji || '🎁')}</div>
-          <div class="detail-mini-body"><span>${escapeDetailText(item.category || 'Template')}</span><h4>${escapeDetailText(item.name)}</h4><p>${escapeDetailText(item.desc || '')}</p><div><b>★ ${Number(item.rating || 0).toFixed(1)}</b><strong>${price}</strong></div></div>
+          <div class="detail-mini-body"><span>${escapeDetailText(item.category || 'Template')}</span><h4>${escapeDetailText(item.name)}</h4><p>${escapeDetailText(item.desc || '')}</p><div><b>★ ${getCombinedStats(item).rating.toFixed(1)}</b><strong>${price}</strong></div></div>
         </article>`;
       }).join('');
       wrap.querySelectorAll('.detail-mini-card').forEach(card => {
@@ -7555,8 +7594,9 @@ var qrcode = function() {
     }
 
     function renderDetailReviews(item) {
-      const count = Number(item.reviewCount || 0);
-      const rating = Number(item.rating || 0);
+      const combined = getCombinedStats(item);
+      const count = combined.reviewCount;
+      const rating = combined.rating;
       const label = document.getElementById('detailReviewCountLabel');
       const summary = document.getElementById('detailReviewSummary');
       const list = document.getElementById('detailReviewList');
@@ -7564,9 +7604,127 @@ var qrcode = function() {
       const rb = document.getElementById('detailRatingBig'); if (rb) rb.textContent = `★ ${rating.toFixed(1)}`;
       const rs = document.getElementById('detailRatingSmall'); if (rs) rs.textContent = `${count} review${count === 1 ? '' : 's'}`;
       if (summary) summary.innerHTML = `<div class="review-score"><strong>${rating.toFixed(1)}</strong><span>★ ★ ★ ★ ★</span><small>Based on ${count} review${count === 1 ? '' : 's'}</small></div><div class="review-bars">${[5,4,3,2,1].map(n=>`<div><span>${n}</span><i><em style="width:${count ? Math.min(100, Math.max(4, rating >= n ? 78 : 12)) : 0}%"></em></i></div>`).join('')}</div>`;
-      const reviews = Array.isArray(item.reviews) ? item.reviews : [];
-      if (list) list.innerHTML = reviews.length ? reviews.slice(0,6).map(r=>`<article class="detail-review"><div class="review-avatar">${escapeDetailText((r.name || 'U').slice(0,1).toUpperCase())}</div><div><b>${escapeDetailText(r.name || 'Verified user')}</b><span>${escapeDetailText(r.time || 'Recently')} · ★ ${Number(r.rating || rating || 0).toFixed(1)}</span><p>${escapeDetailText(r.text || r.comment || '')}</p><button type="button" class="helpful-btn">Helpful?</button></div></article>`).join('') : `<div class="detail-empty-reviews">Reviews will appear here as customers share their experience. <span>${count ? `${count} reviews are recorded for this template.` : ''}</span></div>`;
+      // Real, named reviews (with the reviewer's email + their written
+      // description) that actual visitors submitted through the rating
+      // popup. These sit on top of the baseline count/average above —
+      // there are no individual "fake" review entries, only the numbers.
+      const reviews = templateReviewListCache.get(item.name) || [];
+      if (list) list.innerHTML = reviews.length ? reviews.slice(0,20).map(r => {
+        const when = r.createdAt && typeof r.createdAt.toDate === 'function' ? r.createdAt.toDate().toLocaleDateString() : 'Recently';
+        return `<article class="detail-review"><div class="review-avatar">${escapeDetailText((r.name || r.email || 'U').slice(0,1).toUpperCase())}</div><div><b>${escapeDetailText(r.name || 'Verified user')}</b><span>${escapeDetailText(r.email || '')} · ${escapeDetailText(when)} · ★ ${Number(r.rating || 0).toFixed(1)}</span><p>${escapeDetailText(r.text || '')}</p></div></article>`;
+      }).join('') : `<div class="detail-empty-reviews">Reviews will appear here as customers share their experience. <span>${count ? `${count} reviews are recorded for this template.` : ''}</span></div>`;
+      const rateBtn = document.getElementById('detailRateBtn');
+      if (rateBtn) rateBtn.style.display = hasUserRated(item.name) ? 'none' : 'inline-block';
     }
+
+    // Pulls the real, individually-written reviews (name/email/rating/text)
+    // for a template from Firestore and re-renders the review list once
+    // they arrive. Called every time the detail page opens.
+    async function fetchAndRenderRealReviews(item) {
+      if (!item || !item.name) return;
+      try {
+        const reviewsRef = collection(db, 'templateStats', encodeURIComponent(item.name), 'reviews');
+        const q = query(reviewsRef, orderBy('createdAt', 'desc'), limit(50));
+        const snap = await getDocs(q);
+        const list = [];
+        snap.forEach(docSnap => list.push(docSnap.data() || {}));
+        templateReviewListCache.set(item.name, list);
+        if (currentDetailItem && currentDetailItem.name === item.name) renderDetailReviews(item);
+      } catch (e) { console.warn('Real reviews unavailable:', e); }
+    }
+
+    // Has this browser already submitted a rating for this template?
+    function hasUserRated(name) {
+      return !!localStorage.getItem('ditemps_rated_' + encodeURIComponent(name));
+    }
+
+    // Shows the "rate this template" popup — called 10 seconds after the
+    // detail page has FINISHED loading (never while the loading screen is
+    // still up). Only if this visitor hasn't already rated it, and only
+    // once per browsing session so it doesn't nag on every visit.
+    function maybeShowRatePopup(item) {
+      if (!item || !item.name) return;
+      if (hasUserRated(item.name)) return;
+      const sessionKey = 'ditemps_rateprompt_' + encodeURIComponent(item.name);
+      if (sessionStorage.getItem(sessionKey)) return;
+      sessionStorage.setItem(sessionKey, '1');
+      openRateTemplateModal(item);
+    }
+
+    let _rateModalStars = 0;
+    window.openRateTemplateModal = function (item) {
+      const target = item || currentDetailItem;
+      if (!target) return;
+      _rateModalStars = 0;
+      const nameEl = document.getElementById('rateModalTemplateName');
+      if (nameEl) nameEl.textContent = target.name;
+      const desc = document.getElementById('rateDescriptionInput');
+      if (desc) desc.value = '';
+      const status = document.getElementById('rateModalStatus');
+      if (status) status.textContent = '';
+      renderRateStars(0);
+      document.getElementById('rateTemplateModal').classList.add('active');
+    };
+    window.closeRateTemplateModal = function () {
+      document.getElementById('rateTemplateModal').classList.remove('active');
+    };
+    function renderRateStars(n) {
+      document.querySelectorAll('#rateStarRow span').forEach(el => {
+        const val = Number(el.dataset.star);
+        el.textContent = val <= n ? '★' : '☆';
+        el.classList.toggle('active', val <= n);
+      });
+    }
+    window.rateStarClicked = function (starEl) {
+      _rateModalStars = Number(starEl.dataset.star);
+      renderRateStars(_rateModalStars);
+    };
+    window.submitTemplateReview = async function () {
+      const item = currentDetailItem;
+      const status = document.getElementById('rateModalStatus');
+      if (!item || !item.name) return;
+      if (!_rateModalStars) { if (status) { status.style.color = '#d64d78'; status.textContent = 'Please select a star rating.'; } return; }
+      const user = getCurrentUser();
+      if (!user) {
+        closeRateTemplateModal();
+        openLogin();
+        return;
+      }
+      if (hasUserRated(item.name)) { closeRateTemplateModal(); return; }
+      const textEl = document.getElementById('rateDescriptionInput');
+      const text = textEl ? textEl.value.trim().slice(0, 300) : '';
+      const rating = _rateModalStars;
+      if (status) { status.style.color = 'var(--text-muted)'; status.textContent = 'Submitting...'; }
+      try {
+        const statsRef = doc(db, 'templateStats', encodeURIComponent(item.name));
+        await setDoc(statsRef, {
+          name: item.name,
+          reviewCount: increment(1),
+          reviewSum: increment(rating),
+          updatedAt: serverTimestamp()
+        }, { merge: true });
+        await addDoc(collection(db, 'templateStats', encodeURIComponent(item.name), 'reviews'), {
+          uid: user.uid || '',
+          email: user.email || '',
+          name: (user.displayName || (user.email ? user.email.split('@')[0] : 'Verified user')),
+          rating,
+          text,
+          createdAt: serverTimestamp()
+        });
+        localStorage.setItem('ditemps_rated_' + encodeURIComponent(item.name), '1');
+        const current = templateStatsCache.get(item.name) || {};
+        current.reviewCount = Number(current.reviewCount || 0) + 1;
+        current.reviewSum = Number(current.reviewSum || 0) + rating;
+        templateStatsCache.set(item.name, current);
+        updateRenderedTemplateStats(item);
+        fetchAndRenderRealReviews(item);
+        if (status) { status.style.color = 'var(--accent-gold)'; status.textContent = 'Thanks for rating!'; }
+        setTimeout(closeRateTemplateModal, 900);
+      } catch (e) {
+        console.error(e);
+        if (status) { status.style.color = '#d64d78'; status.textContent = 'Could not submit. Please try again.'; }
+      }
+    };
 
     function closeTemplateDetail() {
       requestCloseOverlay('detail', hideTemplateDetail);
@@ -8887,6 +9045,69 @@ var qrcode = function() {
     const wishlistCache = new Set();
     const likedTemplateCache = new Set();
     const templateStatsCache = new Map();
+    const templateReviewListCache = new Map();
+
+    // ---------- FAKE BASELINE + REAL REVIEW SYSTEM ----------
+    // Every template starts out looking "already popular": a baseline
+    // rating (4.0–5.0), review count (~100–200), likes (~100–200) and
+    // views (~500–600). These numbers are derived deterministically from
+    // the template's NAME (same template = same baseline forever, no
+    // Firestore writes needed for them) instead of being random each time
+    // the page loads. Whatever real visitors do (rate, like, view) is
+    // tracked for real in Firestore and ADDED on top of this baseline —
+    // never replacing it, so numbers only ever grow.
+    function hashTemplateName(name) {
+      let h = 2166136261;
+      const s = String(name || '');
+      for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+      return h >>> 0;
+    }
+    function mulberry32(seed) {
+      let t = seed >>> 0;
+      return function () {
+        t += 0x6D2B79F5;
+        let r = Math.imul(t ^ (t >>> 15), 1 | t);
+        r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+        return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+    const fakeBaselineCache = new Map();
+    function getFakeBaseline(name) {
+      if (fakeBaselineCache.has(name)) return fakeBaselineCache.get(name);
+      const rng = mulberry32(hashTemplateName(name));
+      const baseline = {
+        rating: Math.round((4 + rng() * 1) * 10) / 10,   // 4.0 - 5.0
+        reviewCount: 100 + Math.floor(rng() * 101),      // 100 - 200
+        likes: 100 + Math.floor(rng() * 101),            // 100 - 200
+        views: 500 + Math.floor(rng() * 101)             // 500 - 600
+      };
+      fakeBaselineCache.set(name, baseline);
+      return baseline;
+    }
+
+    // Combines a template's fixed fake baseline with whatever real
+    // engagement Firestore has recorded for it. This is the single
+    // function every bit of UI (grid cards, detail page, mini cards)
+    // should read rating/reviewCount/likes/views through from now on.
+    function getCombinedStats(item) {
+      if (!item || !item.name) return { rating: 0, reviewCount: 0, likes: 0, views: 0 };
+      const baseline = getFakeBaseline(item.name);
+      const real = templateStatsCache.get(item.name) || {};
+      const realViews = Number(real.views || 0);
+      const realLikes = Number(real.likes || 0);
+      const realReviewCount = Number(real.reviewCount || 0);
+      const realReviewSum = Number(real.reviewSum || 0);
+      const combinedReviewCount = baseline.reviewCount + realReviewCount;
+      const combinedRating = combinedReviewCount > 0
+        ? ((baseline.rating * baseline.reviewCount) + realReviewSum) / combinedReviewCount
+        : baseline.rating;
+      return {
+        rating: combinedRating,
+        reviewCount: combinedReviewCount,
+        likes: baseline.likes + realLikes,
+        views: baseline.views + realViews
+      };
+    }
 
     function formatMetric(value) {
       const n = Number(value || 0);
@@ -8906,8 +9127,14 @@ var qrcode = function() {
       try {
         const snap = await getDoc(doc(db, 'templateStats', encodeURIComponent(item.name)));
         const data = snap.exists() ? (snap.data() || {}) : {};
-        templateStatsCache.set(item.name, { views: Number(data.views || 0), likes: Number(data.likes || 0) });
+        templateStatsCache.set(item.name, {
+          views: Number(data.views || 0),
+          likes: Number(data.likes || 0),
+          reviewCount: Number(data.reviewCount || 0),
+          reviewSum: Number(data.reviewSum || 0)
+        });
         updateRenderedTemplateStats(item);
+        renderDetailReviews(item);
       } catch (e) { console.warn('Template stats unavailable:', e); }
     }
 
@@ -8924,19 +9151,19 @@ var qrcode = function() {
     }
 
     function updateRenderedTemplateStats(item) {
-      const stats = templateStatsCache.get(item.name) || { views: 0, likes: 0 };
+      const combined = getCombinedStats(item);
       const detailMetrics = document.getElementById('detailMetrics');
       if (detailMetrics && currentDetailItem && currentDetailItem.name === item.name) {
         detailMetrics.innerHTML = `
-          <span class="detail-metric rating">★ ${Number(item.rating || 0).toFixed(1)} (${Number(item.reviewCount || 0)} reviews)</span>
-          <span class="detail-metric">♡ ${formatMetric(stats.likes)} likes</span>
-          <span class="detail-metric">◉ ${formatMetric(stats.views)} views</span>
+          <span class="detail-metric rating">★ ${combined.rating.toFixed(1)} (${combined.reviewCount} reviews)</span>
+          <span class="detail-metric" style="cursor:pointer;" onclick="likeCurrentTemplate()" title="Tap to like">♡ ${formatMetric(combined.likes)} likes</span>
+          <span class="detail-metric">◉ ${formatMetric(combined.views)} views</span>
           ${isTrending(item) ? '<span class="detail-metric">🔥 Trending</span>' : ''}`;
       }
       document.querySelectorAll('[data-template-stat-name]').forEach(el => {
         if (el.dataset.templateStatName !== item.name) return;
         const type = el.dataset.templateStatType;
-        el.textContent = type === 'likes' ? '♡ ' + formatMetric(stats.likes) : '◉ ' + formatMetric(stats.views);
+        el.textContent = type === 'likes' ? '♡ ' + formatMetric(combined.likes) : '◉ ' + formatMetric(combined.views);
         const metricsWrap = el.closest('.card-metrics');
         if (metricsWrap) {
           let trend = metricsWrap.querySelector('.trending-badge');
@@ -8959,9 +9186,14 @@ var qrcode = function() {
         try {
           const snap = await getDoc(doc(db, 'templateStats', encodeURIComponent(item.name)));
           const d = snap.exists() ? (snap.data() || {}) : {};
-          templateStatsCache.set(item.name, { views: Number(d.views || 0), likes: Number(d.likes || 0) });
+          templateStatsCache.set(item.name, {
+            views: Number(d.views || 0),
+            likes: Number(d.likes || 0),
+            reviewCount: Number(d.reviewCount || 0),
+            reviewSum: Number(d.reviewSum || 0)
+          });
           updateRenderedTemplateStats(item);
-        } catch (e) { /* keep zero until stats are available */ }
+        } catch (e) { /* keep baseline until real stats are available */ }
       }
     }
 
@@ -8997,6 +9229,38 @@ var qrcode = function() {
       } catch (err) { console.error(err); }
     }
 
+    // Corner heart on a template card (All/Premium/Surprise/Cards grids) now
+    // toggles that template in/out of the signed-in user's wishlist — same
+    // wishlist used by the account page's "Wishlist" tab.
+    async function toggleWishlistFromCard(item, btnEl, e) {
+      if (e) e.stopPropagation();
+      if (!item || !item.name) return;
+      if (!window.isUserLoggedIn || !window.currentUserUid) { openLogin(); return; }
+      const userRef = doc(db, 'users', window.currentUserUid);
+      const name = item.name;
+      try {
+        if (wishlistCache.has(name)) {
+          await setDoc(userRef, { wishlist: arrayRemove(name) }, { merge: true });
+          wishlistCache.delete(name);
+        } else {
+          await setDoc(userRef, { wishlist: arrayUnion(name) }, { merge: true });
+          wishlistCache.add(name);
+        }
+        refreshAllWishlistHearts();
+      } catch (err) { console.error(err); alert('Wishlist update failed. Please try again.'); }
+    }
+
+    // Keeps every heart on screen (grid corner hearts + the detail page's
+    // two heart buttons) in sync with wishlistCache after any wishlist change.
+    function refreshAllWishlistHearts() {
+      document.querySelectorAll('.card-like-btn[data-template-name]').forEach(btn => {
+        const wished = wishlistCache.has(btn.dataset.templateName);
+        btn.classList.toggle('active', wished);
+        btn.textContent = wished ? '♥' : '♡';
+      });
+      updateLikeButton();
+    }
+
     async function likeCurrentTemplate() {
       if (!currentDetailItem) return;
       const name = currentDetailItem.name;
@@ -9017,13 +9281,21 @@ var qrcode = function() {
 
     function updateLikeButton() {
       const btns = [document.getElementById('detailLikeBtn'), document.getElementById('detailLikeBtnBottom')].filter(Boolean);
-      if (!btns.length || !currentDetailItem) return;
-      const liked = likedTemplateCache.has(currentDetailItem.name) || localStorage.getItem('ditemps_liked_' + encodeURIComponent(currentDetailItem.name));
-      btns.forEach(btn => {
-        btn.classList.toggle('active', !!liked);
-        btn.textContent = liked ? '♥' : '♡';
-        btn.title = liked ? 'Liked' : 'Like';
-      });
+      if (btns.length && currentDetailItem) {
+        const wished = wishlistCache.has(currentDetailItem.name);
+        btns.forEach(btn => {
+          btn.classList.toggle('active', !!wished);
+          btn.textContent = wished ? '♥' : '♡';
+          btn.title = wished ? 'Saved to wishlist' : 'Add to wishlist';
+        });
+      }
+      const thumbBtn = document.getElementById('detailThumbLikeBtn');
+      if (thumbBtn && currentDetailItem) {
+        const name = currentDetailItem.name;
+        const alreadyLiked = likedTemplateCache.has(name) || !!localStorage.getItem('ditemps_liked_' + encodeURIComponent(name));
+        thumbBtn.classList.toggle('active', alreadyLiked);
+        thumbBtn.textContent = alreadyLiked ? '👍 Liked' : '👍 Like';
+      }
     }
 
     async function toggleCurrentWishlist() {
@@ -9038,16 +9310,15 @@ var qrcode = function() {
           await setDoc(userRef, { wishlist: arrayUnion(name) }, { merge: true });
           wishlistCache.add(name);
         }
-        updateWishlistButton();
+        refreshAllWishlistHearts();
       } catch (e) { console.error(e); alert('Wishlist update failed. Please try again.'); }
     }
 
+    // Kept so existing call sites (openTemplateDetail, etc.) keep working —
+    // the dedicated "Save to Wishlist" button is gone, so this now just
+    // syncs the heart buttons instead.
     function updateWishlistButton() {
-      const btn = document.getElementById('detailWishlistBtn');
-      if (!btn) return;
-      const saved = currentDetailItem && wishlistCache.has(currentDetailItem.name);
-      btn.classList.toggle('active', !!saved);
-      btn.textContent = saved ? '♥ Saved to Wishlist' : '♡ Save to Wishlist';
+      updateLikeButton();
     }
 
     async function loadCurrentUserWishlist() {
@@ -9057,7 +9328,7 @@ var qrcode = function() {
         const data = snap.exists() ? (snap.data() || {}) : {};
         wishlistCache.clear();
         (Array.isArray(data.wishlist) ? data.wishlist : []).forEach(x => wishlistCache.add(x));
-        updateWishlistButton();
+        refreshAllWishlistHearts();
       } catch (e) { console.warn('Wishlist load failed:', e); }
     }
 
@@ -9176,7 +9447,7 @@ var qrcode = function() {
         const userRef = doc(db, "users", window.currentUserUid);
         await setDoc(userRef, { wishlist: arrayRemove(name) }, { merge: true });
         wishlistCache.delete(name);
-        updateWishlistButton();
+        refreshAllWishlistHearts();
         loadAccountWishlist();
       } catch (e) { console.error(e); alert('Wishlist update failed. Please try again.'); }
     };
@@ -9710,7 +9981,7 @@ function confirmLogout() {
       sendEmailVerification, deleteUser, reauthenticateWithPopup, reauthenticateWithCredential, EmailAuthProvider
     } from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
     import {
-      getFirestore, doc, collection, query, orderBy, where,
+      getFirestore, doc, collection, query, orderBy, where, limit,
       setDoc as _fbSetDoc, addDoc as _fbAddDoc, getDocs as _fbGetDocs, getDoc as _fbGetDoc,
       onSnapshot as _fbOnSnapshot, runTransaction as _fbRunTransaction,
       increment as _fbIncrement, arrayUnion as _fbArrayUnion, arrayRemove as _fbArrayRemove,
@@ -9990,6 +10261,7 @@ function confirmLogout() {
         try {
           const result = await saveUserData(user);
           listenToWallet(user.uid);
+          loadCurrentUserWishlist();
           if (result && result.isFirstTimeUser) {
             scheduleWelcomeBonusPopups(result.validReferral);
           }
@@ -10009,6 +10281,8 @@ function confirmLogout() {
         window.currentUserWallet = 0;
         window.currentUserPremiumUntil = 0;
         window.walletUnlockedTemplateNames = new Set();
+        wishlistCache.clear();
+        refreshAllWishlistHearts();
       }
     }
 
@@ -10605,7 +10879,7 @@ function confirmLogout() {
     // ============================================================
     Object.assign(window, {
       auth, db, provider,
-      doc, collection, query, orderBy, where,
+      doc, collection, query, orderBy, where, limit,
       setDoc, addDoc, getDoc, getDocs, onSnapshot, runTransaction,
       increment, arrayUnion, arrayRemove, serverTimestamp,
       getCurrentUser, deleteUser, sendEmailVerification,
