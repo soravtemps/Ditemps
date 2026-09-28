@@ -11385,7 +11385,7 @@ window.showDitempsLandingPage = function() {
    A thin thread that roams the page on its own "surface" layer
    (SURFACE_Z). Anything with a higher z-index (header, popups,
    loading screen…) sits ON TOP of it, so the thread slides under
-   those. On tap / click / swipe the thread swims to that spot,
+   those. On tap / click (not swipe) the thread swims to that spot,
    curls once around it and swims away again in a random path.
    • Change SURFACE_Z to move the surface up/down the z-index stack.
    • Disabled automatically for "reduce motion" users.
@@ -11444,12 +11444,11 @@ window.showDitempsLandingPage = function() {
     s.tx = x; s.ty = y; s.lastTarget = performance.now();
     if (s.state !== 'seek') s.state = 'seek';
   }
-  window.addEventListener('pointerdown', function (e) { seek(e.clientX, e.clientY); }, { passive: true, capture: true });
-  window.addEventListener('pointermove', function (e) {
-    if (e.pointerType === 'touch' || e.buttons > 0) seek(e.clientX, e.clientY);
-  }, { passive: true, capture: true });
-  window.addEventListener('touchmove', function (e) {
-    var t = e.touches && e.touches[0]; if (t) seek(t.clientX, t.clientY);
+  // Only a real tap / click calls the thread. Swipes and scrolls are ignored
+  // (the browser doesn't fire "click" after a swipe or scroll gesture).
+  window.addEventListener('click', function (e) {
+    if (e.clientX === 0 && e.clientY === 0 && e.detail === 0) return; // synthetic/keyboard clicks
+    seek(e.clientX, e.clientY);
   }, { passive: true, capture: true });
 
   function startLeave() {
