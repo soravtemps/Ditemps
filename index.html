@@ -4077,6 +4077,62 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
   transform: none !important;
 }
 </style>
+<style id="ditemps-redeem-codes-style">
+/* ===== Redeem codes (user box + admin Codes tab) + heart popup ===== */
+.codes-row { display:flex; gap:8px; align-items:center; margin-top:8px; }
+.codes-row input {
+  flex:1 1 auto; min-width:0; width:auto !important; margin:0 !important;
+  padding:11px 14px; border-radius:14px; font-size:14px; letter-spacing:.3px;
+  border:1px solid rgba(128,128,128,.35); background:transparent; color:inherit; outline:none;
+}
+.codes-row input:focus { border-color:#b78316; }
+.codes-row button {
+  flex:0 0 auto; width:auto !important; margin:0 !important; border:0; border-radius:14px;
+  padding:11px 18px; font-weight:800; font-size:14px; background:#111; color:#fff; cursor:pointer;
+}
+.codes-row button:disabled { opacity:.55; cursor:default; }
+html.ditemps-dark .codes-row button { background:#f5f5f5; color:#111; }
+.redeem-box {
+  margin:14px 0; padding:14px; border-radius:18px;
+  border:1px dashed rgba(183,131,22,.55); background:rgba(183,131,22,.06); text-align:left;
+}
+.redeem-box-label { font-size:11px; font-weight:800; letter-spacing:1.2px; color:#b78316; }
+.codes-admin-card { padding:14px; border-radius:18px; border:1px solid rgba(128,128,128,.28); margin-bottom:16px; }
+.codes-title { font-size:16px; font-weight:800; }
+.codes-sub { font-size:12px; color:#888; line-height:1.5; margin:6px 0 4px; }
+.codes-list-title { font-size:11px; font-weight:800; letter-spacing:1.2px; color:#888; margin:4px 0 8px; }
+.admin-code-row {
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
+  padding:11px 12px; border-radius:14px; border:1px solid rgba(128,128,128,.22); margin-bottom:8px; font-size:13px;
+}
+.admin-code-row b { font-size:14px; letter-spacing:.4px; word-break:break-all; }
+.admin-code-row .acr-meta { font-size:11px; color:#888; margin-top:2px; }
+.admin-code-pill { flex:0 0 auto; font-size:11px; font-weight:800; padding:4px 10px; border-radius:20px; }
+.admin-code-pill.live { background:rgba(46,160,90,.15); color:#2ea05a; }
+.admin-code-pill.expired { background:rgba(128,128,128,.18); color:#888; }
+
+#redeemHeartPopup.modal-overlay { z-index:2700; overflow:hidden; }
+.redeem-heart-wrap { position:relative; text-align:center; max-width:320px; padding:8px 18px 18px; color:#fff; }
+.redeem-heart-wrap p { margin:6px 0 14px; font-size:14px; color:rgba(255,255,255,.9); }
+.redeem-heart-wrap .generate-btn { margin-top:0; }
+.redeem-heart {
+  position:relative; width:200px; height:185px; margin:0 auto 6px;
+  filter:drop-shadow(0 14px 28px rgba(224,36,94,.5));
+  animation:redeemHeartPop .85s cubic-bezier(.2,1.5,.4,1) both, redeemHeartBeat 1.3s ease-in-out .9s infinite;
+}
+.redeem-heart svg { width:100%; height:100%; display:block; }
+.redeem-heart-text {
+  position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center;
+  padding-bottom:18px; text-shadow:0 2px 10px rgba(0,0,0,.25);
+}
+.redeem-heart-text b { font-size:36px; font-weight:900; line-height:1; }
+.redeem-heart-text span { font-size:12px; font-weight:700; margin-top:5px; opacity:.95; }
+.redeem-float-heart { position:absolute; bottom:18%; pointer-events:none; opacity:0; animation:redeemFloatUp 2.6s ease-out forwards; }
+@keyframes redeemHeartPop { 0% { transform:scale(.2); opacity:0; } 100% { transform:scale(1); opacity:1; } }
+@keyframes redeemHeartBeat { 0%,100% { transform:scale(1); } 15% { transform:scale(1.07); } 30% { transform:scale(1); } 45% { transform:scale(1.05); } }
+@keyframes redeemFloatUp { 0% { transform:translateY(0) scale(.6); opacity:0; } 15% { opacity:.95; } 100% { transform:translateY(-55vh) scale(1.15); opacity:0; } }
+@media (prefers-reduced-motion:reduce) { .redeem-heart { animation:redeemHeartPop .01s both; } .redeem-float-heart { display:none; } }
+</style>
 </head>
 <body>
 
@@ -4734,6 +4790,11 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
         <div class="status-text" id="walletPaymentStatus"></div>
       </div>
 
+      <div id="paymentWalletDoneBox" style="display:none; text-align:center; padding:14px 8px; font-weight:800; color:var(--accent-gold);">
+        ✅ Paid fully with wallet — opening customize…
+      </div>
+
+      <div id="paymentUpiSection">
       <button id="payUpiBtn" onclick="payViaUPI('gpay')" style="display:flex; align-items:center; justify-content:center; gap:8px; background:#fff; color:#4285F4; font-weight:800;">
         <img src="https://cdn.simpleicons.org/googlepay" alt="" style="width:20px; height:20px;" onerror="this.replaceWith(Object.assign(document.createElement('span'),{style:'width:18px;height:18px;border-radius:50%;background:conic-gradient(#4285F4 0 25%,#34A853 25% 50%,#FBBC05 50% 75%,#EA4335 75% 100%);display:inline-block;'}))">
         Google Pay
@@ -4756,7 +4817,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
       <input type="text" id="payBuyerContact" placeholder="e.g. 9876543210">
 
       <label class="field-label">UPI Transaction ID / UTR (after paying)</label>
-      <input type="text" id="payUtr" placeholder="e.g. 123456789012" inputmode="numeric" autocomplete="off" maxlength="12" minlength="12" pattern="\d{12}">
+      <input type="text" id="payUtr" placeholder="Enter transaction ID / UTR" inputmode="numeric" autocomplete="off" maxlength="18">
 
       
       <div id="utrLengthHint" class="status-text" style="margin-top:4px; font-size:11px; display:none;">
@@ -4764,8 +4825,9 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
       </div>
 <button class="generate-btn" id="paymentConfirmBtn" onclick="submitPayment()">I've Paid — Continue</button>
       <div class="status-text" id="paymentStatusText"></div>
+      </div>
 
-      <button class="modal-close" onclick="closePaymentModal()">Cancel</button>
+      <button class="modal-close" id="paymentCancelBtn" onclick="closePaymentModal()">Cancel</button>
     </div>
   </div>
 
@@ -4872,6 +4934,7 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
         <button class="acct-tab" id="settingsTabWishlist" onclick="showAccountTab('wishlist')">Wishlist</button>
         <button class="acct-tab" id="settingsTabReferral" onclick="showAccountTab('referral')">Refer &amp; Earn</button>
         <button class="acct-tab" id="settingsTabSettings" onclick="showAccountTab('settings')">Settings</button>
+        <button class="acct-tab" id="settingsTabCodes" style="display:none;" onclick="showAccountTab('codes')">Codes</button>
       </div>
 
       <div id="accountOrdersPanel">
@@ -4892,6 +4955,15 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
             <div class="referral-reward-card"><span>Friend gets</span><b>₹15</b></div>
             <div class="referral-reward-card"><span>You earn</span><b>₹10</b></div>
           </div>
+        </div>
+
+        <div class="redeem-box">
+          <div class="redeem-box-label">🎟️ HAVE A CODE?</div>
+          <div class="codes-row">
+            <input type="text" id="redeemInputProfile" placeholder="Enter code" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false" onkeydown="if(event.key==='Enter')redeemWalletCode('Profile')">
+            <button type="button" id="redeemBtnProfile" onclick="redeemWalletCode('Profile')">Redeem</button>
+          </div>
+          <div class="status-text" id="redeemStatusProfile"></div>
         </div>
 
         <div class="wallet-panel">
@@ -4938,6 +5010,25 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
         </div>
       </div>
 
+
+      <!-- ADMIN ONLY: create wallet codes. Tab is shown only for ADMIN_EMAIL (see handleAuthUser). -->
+      <div id="accountCodesPanel" style="display:none;">
+        <div class="codes-admin-card">
+          <div class="codes-title">Create wallet code</div>
+          <p class="codes-sub">Type any code and tap <b>Make</b>, enter the wallet amount, then press <b>OK</b>. The code goes live instantly and stays valid for 24 hours.</p>
+          <div class="codes-row">
+            <input type="text" id="adminCodeInput" placeholder="Any code, e.g. DIWALI10" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false">
+            <button type="button" id="adminCodeMakeBtn" onclick="adminCodeMake()">Make</button>
+          </div>
+          <div class="codes-row" id="adminCodeAmountRow" style="display:none;">
+            <input type="number" id="adminCodeAmount" placeholder="Wallet amount (₹)" min="1" step="1" inputmode="numeric">
+            <button type="button" id="adminCodeOkBtn" onclick="adminCodeOk()">OK</button>
+          </div>
+          <div class="status-text" id="adminCodeStatus"></div>
+        </div>
+        <div class="codes-list-title">Recent codes</div>
+        <div class="settings-data-list" id="adminCodesList" style="max-height:none;"><div class="empty-note">No codes yet.</div></div>
+      </div>
 
       <div id="accountSettingsPanel" style="display:none;" class="ditemps-settings-page">
 
@@ -5101,7 +5192,16 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
           <div class="referral-reward-card"><span>You earn</span><b>₹10</b></div>
         </div>
       </div>
-      <div class="refer-link-box compact">
+      <div class="redeem-box">
+          <div class="redeem-box-label">🎟️ HAVE A CODE?</div>
+          <div class="codes-row">
+            <input type="text" id="redeemInputModal" placeholder="Enter code" maxlength="40" autocomplete="off" autocapitalize="characters" spellcheck="false" onkeydown="if(event.key==='Enter')redeemWalletCode('Modal')">
+            <button type="button" id="redeemBtnModal" onclick="redeemWalletCode('Modal')">Redeem</button>
+          </div>
+          <div class="status-text" id="redeemStatusModal"></div>
+        </div>
+
+        <div class="refer-link-box compact">
         <input type="text" id="referLinkInput" readonly value="">
         <button onclick="copyReferLink()">Copy</button>
       </div>
@@ -5144,6 +5244,21 @@ button:hover,.btn:hover,a.button:hover{transform:translateY(-4px);filter:brightn
           after the first one is closed, not combined into one message.
        See scheduleWelcomeBonusPopups() / showRewardPopup() in the JS.
   ============================================================ -->
+  <!-- Heart-shaped popup shown after a code is redeemed successfully -->
+  <div class="modal-overlay" id="redeemHeartPopup" onclick="if(event.target===this)closeRedeemHeartPopup()">
+    <div class="redeem-heart-wrap">
+      <div class="redeem-heart">
+        <svg viewBox="0 0 32 29.6" aria-hidden="true">
+          <defs><linearGradient id="redeemHeartGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ff6a95"/><stop offset="1" stop-color="#e0245e"/></linearGradient></defs>
+          <path fill="url(#redeemHeartGrad)" d="M23.6,0c-3.4,0-6.3,2.7-7.6,5.6C14.7,2.7,11.8,0,8.4,0C3.8,0,0,3.8,0,8.4c0,9.4,9.5,11.9,16,21.2c6.1-9.3,16-12.1,16-21.2C32,3.8,28.2,0,23.6,0z"/>
+        </svg>
+        <div class="redeem-heart-text"><b id="redeemHeartAmount">+₹0</b><span>added to your wallet</span></div>
+      </div>
+      <p>Code redeemed successfully 💖</p>
+      <button type="button" class="generate-btn" onclick="closeRedeemHeartPopup()">Yay!</button>
+    </div>
+  </div>
+
   <div class="modal-overlay reward-popup-overlay" id="rewardPopup">
     <div class="modal-box reward-popup-box">
       <div class="reward-popup-emoji" id="rewardPopupEmoji">🎉</div>
@@ -7151,7 +7266,14 @@ var qrcode = function() {
 
     function pushOverlay(name, hideFn) {
       overlayStack.push({ name, hideFn });
-      history.pushState({ sorabOverlay: name }, '');
+      // When the payment modal hands over to the customize modal, reuse the
+      // same history entry (replaceState) so the back button stays in sync.
+      if (window.__replaceNextOverlayState) {
+        window.__replaceNextOverlayState = false;
+        history.replaceState({ sorabOverlay: name }, '');
+      } else {
+        history.pushState({ sorabOverlay: name }, '');
+      }
     }
 
     // Called by the on-screen "X"/Cancel/Close buttons. Going through
@@ -8086,7 +8208,58 @@ var qrcode = function() {
       }
     }
 
+    // ---- Wallet / payment flow state ----
+    let paymentLocked = false;       // wallet purchase is being processed: don't let the modal close
+    let paymentHandoffDone = false;  // customize modal already opened for this payment
+
+    // Shows/hides the whole UPI part (buttons, name, contact, UTR, confirm).
+    // When the wallet covers 100% of the price there is nothing left to pay
+    // by UPI, so that part is hidden and a "paid" note is shown instead.
+    function setPaymentUpiVisible(visible) {
+      const upi = document.getElementById('paymentUpiSection');
+      const done = document.getElementById('paymentWalletDoneBox');
+      const walletBox = document.getElementById('paymentWalletBox');
+      if (upi) upi.style.display = visible ? '' : 'none';
+      if (done) done.style.display = visible ? 'none' : '';
+      if (walletBox && !visible) walletBox.style.display = 'none';
+      if (walletBox && visible) walletBox.style.display = '';
+    }
+
+    function setPaymentLocked(locked) {
+      paymentLocked = locked;
+      const cancel = document.getElementById('paymentCancelBtn');
+      if (cancel) { cancel.disabled = locked; cancel.style.opacity = locked ? '.5' : ''; }
+    }
+
+    // Payment is fully done (wallet, or UPI + UTR): close the payment modal
+    // and go straight to customize. Reuses the payment history entry so the
+    // back button doesn't need an extra press.
+    function finishPaymentToCustomize(item) {
+      if (paymentHandoffDone) return;
+      paymentHandoffDone = true;
+      setPaymentLocked(false);
+      const idx = overlayStack.map(o => o.name).lastIndexOf('payment');
+      if (idx > -1) {
+        const wasTop = idx === overlayStack.length - 1;
+        overlayStack.splice(idx, 1);
+        if (wasTop) window.__replaceNextOverlayState = true;
+      }
+      document.getElementById('paymentModal').classList.remove('active');
+      openCustomizeModal(item);
+    }
+
     function openPaymentModal(item) {
+      // Price is already ₹0 (100% offer / fully discounted): nothing to pay,
+      // send the user straight to customize.
+      if (item && parsePriceNumber(item.price) <= 0 && /₹|\d|free/i.test(String(item.price || ''))) {
+        currentPaymentTemplate = item;
+        paymentHandoffDone = false;
+        openCustomizeModal(item);
+        return;
+      }
+      paymentHandoffDone = false;
+      setPaymentLocked(false);
+      setPaymentUpiVisible(true);
       currentPaymentTemplate = item;
       document.getElementById('paymentTemplateName').textContent = item.name;
       document.getElementById('paymentAmountText').textContent = item.price || '';
@@ -8104,6 +8277,14 @@ var qrcode = function() {
     }
 
     function hidePaymentModal() {
+      // Wallet purchase is mid-way (unlock being saved): don't let back/cancel
+      // silently close the modal. Keep it open; it will move to customize
+      // automatically as soon as it finishes.
+      if (paymentLocked) {
+        document.getElementById('paymentModal').classList.add('active');
+        pushOverlay('payment', hidePaymentModal);
+        return;
+      }
       document.getElementById('paymentModal').classList.remove('active');
       // Modal closing without a completed purchase = refund any wallet
       // amount that was deducted but never turned into a finished order.
@@ -8144,7 +8325,7 @@ var qrcode = function() {
     const utrField = document.getElementById('payUtr');
     if (utrField) {
       utrField.addEventListener('input', () => {
-        utrField.value = utrField.value.replace(/\D/g, '').slice(0, 12);
+        utrField.value = utrField.value.replace(/\D/g, '').slice(0, 18);
         // Digit-count hint is intentionally kept hidden from the user (see
         // #utrLengthHint's display:none) — it still updates in the
         // background in case it's needed for debugging, but is never shown.
@@ -8195,6 +8376,16 @@ var qrcode = function() {
       if (status) status.textContent = 'Applying wallet credit…';
       if (btn) btn.disabled = true;
 
+      // If the wallet balance covers the whole price, immediately hide the
+      // UPI section and lock the modal so the user can't pay twice or back
+      // out halfway with the template unlocked but unnoticed.
+      const expectFullWallet = !!window.isAdminUser || Number(window.currentUserWallet || 0) >= originalAmount;
+      if (expectFullWallet) {
+        setPaymentLocked(true);
+        setPaymentUpiVisible(false);
+        document.getElementById('paymentAmountText').textContent = '₹0';
+      }
+
       try {
         const userRef = doc(db, 'users', window.currentUserUid);
         let walletUsed = 0;
@@ -8233,14 +8424,20 @@ var qrcode = function() {
           pendingWalletHold = null;
           await markTemplatePurchased();
 
-          await saveOrderToFirestore({
-            templateName: currentPaymentTemplate.name,
-            price: currentPaymentTemplate.price,
-            buyerName: (getCurrentUser() && getCurrentUser().displayName) || '',
-            buyerContact: (getCurrentUser() && getCurrentUser().email) || '',
-            utr: 'WALLET',
-            paymentMethod: 'website_wallet'
-          });
+          try {
+            await saveOrderToFirestore({
+              templateName: currentPaymentTemplate.name,
+              price: currentPaymentTemplate.price,
+              buyerName: (getCurrentUser() && getCurrentUser().displayName) || '',
+              buyerContact: (getCurrentUser() && getCurrentUser().email) || '',
+              utr: 'WALLET',
+              paymentMethod: 'website_wallet'
+            });
+          } catch (orderErr) {
+            // Wallet is already deducted and the template unlocked, so never
+            // fall back to the UPI screen just because the order log failed.
+            console.error('Wallet order log failed', orderErr);
+          }
 
           if (status) {
             status.style.color = 'var(--accent-gold)';
@@ -8250,12 +8447,15 @@ var qrcode = function() {
           }
 
           updateWalletApplyButton();
-          setTimeout(() => {
-            closePaymentModal();
-            openCustomizeModal(currentPaymentTemplate);
-          }, 450);
+          // Remaining amount is ₹0 → no UPI needed, go straight to customize.
+          finishPaymentToCustomize(currentPaymentTemplate);
           return;
         }
+
+        // Wallet didn't cover everything after all (balance changed): bring
+        // the UPI section back for the remaining amount.
+        setPaymentLocked(false);
+        setPaymentUpiVisible(true);
 
         // Partial wallet payment: money has already left the wallet, but the
         // purchase isn't done yet — the user still has to pay ₹remainingAmount
@@ -8275,6 +8475,9 @@ var qrcode = function() {
 
         updateWalletApplyButton();
       } catch (e) {
+        setPaymentLocked(false);
+        setPaymentUpiVisible(true);
+        document.getElementById('paymentAmountText').textContent = currentPaymentTemplate ? (currentPaymentTemplate.price || '') : '';
         if (status) {
           status.style.color = '';
           status.textContent = e.message === 'NO_WALLET'
@@ -8287,15 +8490,18 @@ var qrcode = function() {
       }
     }
 
-    function submitPayment() {
+    let paymentVerifying = false;
+
+    async function submitPayment() {
+      if (paymentVerifying) return;
+
       const name = document.getElementById('payBuyerName').value.trim();
       const emailInput = document.getElementById('payBuyerContact');
       const email = emailInput.value.trim();
       const utrInput = document.getElementById('payUtr');
       const utr = utrInput.value.trim();
       const statusText = document.getElementById('paymentStatusText');
-
-      const UTR_LENGTH = 12;
+      const confirmBtn = document.getElementById('paymentConfirmBtn');
 
       emailInput.setCustomValidity('');
       utrInput.setCustomValidity('');
@@ -8313,26 +8519,44 @@ var qrcode = function() {
         return;
       }
 
-      // Format check: exactly 12 digits. Note — this only confirms the UTR
-      // *looks* like a real UPI reference number; it can't confirm on its
-      // own that money actually arrived (that needs a bank/payment-gateway
-      // API). The admin still cross-checks each UTR against the UPI app
-      // before fulfilling an order (see Admin → Orders).
-      if (!/^\d+$/.test(utr) || utr.length !== UTR_LENGTH) {
-        // Deliberately generic: we don't tell the user this is a 12-digit
-        // format check, so they can't work out the rule and try to fake a
-        // UTR that merely satisfies the digit count without a real payment.
-        utrInput.setCustomValidity('Payment not received yet.');
-        utrInput.reportValidity();
-        statusText.textContent = 'Payment not received yet. Please complete the UPI payment and enter the transaction ID / UTR shown in your UPI app.';
+      if (!utr) {
+        statusText.textContent = 'Please enter the transaction ID / UTR shown in your UPI app.';
+        utrInput.focus();
         return;
       }
 
-      statusText.textContent = 'Saving order...';
+      // The UTR box accepts up to 18 digits on purpose, so the user can't
+      // tell what length is expected. We never show an instant error:
+      // every attempt goes through the "checking payment" screen first.
+      // The order is saved / template unlocked ONLY if the UTR is exactly
+      // 12 digits. Admin still cross-checks each UTR in Admin → Orders.
+      paymentVerifying = true;
+      if (confirmBtn) confirmBtn.disabled = true;
+      statusText.textContent = '';
 
-      beginPrepTask('Saving your order…');
-      statusText.textContent = 'Saving order...';
+      const msgEl = document.getElementById('prepLoaderMessage');
+      beginPrepTask('Your payment is being checked…\nDo not go back or lock your phone.');
+      if (msgEl) msgEl.style.whiteSpace = 'pre-line';
 
+      const waitMs = 5000 + Math.floor(Math.random() * 10001); // 5–15 seconds
+      await new Promise(resolve => setTimeout(resolve, waitMs));
+
+      // User chose "Stop loading" in the back dialog: abandon the check.
+      if (prepStopRequested) {
+        paymentVerifying = false;
+        if (confirmBtn) confirmBtn.disabled = false;
+        return;
+      }
+
+      if (!/^\d{12}$/.test(utr)) {
+        endPrepTask();
+        paymentVerifying = false;
+        if (confirmBtn) confirmBtn.disabled = false;
+        statusText.textContent = 'Payment not received yet. Please complete the UPI payment and enter the correct transaction ID / UTR shown in your UPI app.';
+        return;
+      }
+
+      // 12-digit UTR confirmed → now (and only now) save the order and unlock.
       const orderData = {
         templateName: currentPaymentTemplate ? currentPaymentTemplate.name : '',
         price: currentPaymentTemplate ? currentPaymentTemplate.price : '',
@@ -8343,26 +8567,22 @@ var qrcode = function() {
 
       const proceedToCustomize = () => {
         endPrepTask();
+        paymentVerifying = false;
+        if (confirmBtn) confirmBtn.disabled = false;
         // Payment (any wallet portion + this UPI amount) is now fully
         // confirmed: persist the unlock and clear the pending wallet hold so
         // it's no longer treated as an abandoned/refundable payment.
         markTemplatePurchased().finally(() => {
-          closePaymentModal();
-          openCustomizeModal(currentPaymentTemplate);
+          finishPaymentToCustomize(currentPaymentTemplate);
         });
       };
 
-      if (typeof saveOrderToFirestore === 'function') {
-        saveOrderToFirestore(orderData)
-          .then(proceedToCustomize)
-          .catch((err) => {
-            console.error(err);
-            statusText.textContent = 'Order could not be saved, but you can continue.';
-            setTimeout(proceedToCustomize, 1200);
-          });
-      } else {
-        proceedToCustomize();
+      try {
+        if (typeof saveOrderToFirestore === 'function') await saveOrderToFirestore(orderData);
+      } catch (err) {
+        console.error('Order save failed', err);
       }
+      proceedToCustomize();
     }
 
     // ============================================================
@@ -9500,6 +9720,13 @@ var qrcode = function() {
     };
 
     function showAccountTab(tab) {
+      if (tab === 'codes' && !window.isAdminUser) tab = 'orders'; // Codes tab is admin-only
+      const codesPanel = document.getElementById('accountCodesPanel');
+      const codesTab = document.getElementById('settingsTabCodes');
+      const isCodes = tab === 'codes';
+      if (codesPanel) codesPanel.style.display = isCodes ? 'block' : 'none';
+      if (codesTab) codesTab.classList.toggle('active', isCodes);
+      if (isCodes && typeof window.loadAdminCodes === 'function') window.loadAdminCodes();
       const orders = document.getElementById('accountOrdersPanel');
       const wish = document.getElementById('accountWishlistPanel');
       const referral = document.getElementById('accountReferralPanel');
@@ -10279,6 +10506,12 @@ function confirmLogout() {
       window.isUserLoggedIn = !!user;
       window.currentUserUid = user ? user.uid : null;
       window.isAdminUser = !!(user && user.email && user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase());
+      {
+        const _codesTab = document.getElementById('settingsTabCodes');
+        if (_codesTab) _codesTab.style.display = window.isAdminUser ? '' : 'none';
+        const _codesPanel = document.getElementById('accountCodesPanel');
+        if (_codesPanel && !window.isAdminUser) _codesPanel.style.display = 'none';
+      }
 
       const loginBtn = document.getElementById('navLoginBtn');
       const userChip = document.getElementById('navUserChip');
@@ -10994,5 +11227,317 @@ window.showDitempsLandingPage = function() {
 })();
 </script>
 
+
+<script id="ditemps-redeem-codes-js">
+/* ============================================================
+   # WALLET CODES (redeem + admin creator) #
+   Firestore collection "redeemCodes", doc id = "c_" + encoded UPPERCASE code:
+     { code, amount, createdAt(ms), expiresAt(ms), createdBy }
+   A code is live for CODE_LIFETIME_MS after the admin presses OK.
+   Redemptions are remembered on the USER doc (users/{uid}.redeemedCodes)
+   as "<docId>:<createdAt>", so one account can redeem one code only once,
+   while re-issuing the same text later (new createdAt) works again.
+   Codes are case-insensitive.
+   ============================================================ */
+(function () {
+  var CODE_LIFETIME_MS = 24 * 60 * 60 * 1000;
+  var MAX_AMOUNT = 100000;
+  function $(id) { return document.getElementById(id); }
+  function codeDocId(raw) { return 'c_' + encodeURIComponent(String(raw).trim().toUpperCase().slice(0, 40)); }
+  function timeLeft(ms) {
+    var m = Math.max(0, Math.floor(ms / 60000)), h = Math.floor(m / 60);
+    return h + 'h ' + (m % 60) + 'm';
+  }
+
+  /* ---------- Admin: Make → amount → OK ---------- */
+  window.adminCodeMake = function () {
+    var st = $('adminCodeStatus'), code = ($('adminCodeInput').value || '').trim();
+    if (!window.isAdminUser) return;
+    if (!code) { st.textContent = 'Type a code first.'; return; }
+    st.textContent = '';
+    $('adminCodeAmountRow').style.display = 'flex';
+    $('adminCodeAmount').focus();
+  };
+
+  window.adminCodeOk = async function () {
+    var st = $('adminCodeStatus'), btn = $('adminCodeOkBtn');
+    if (!window.isAdminUser) return;
+    var code = ($('adminCodeInput').value || '').trim().toUpperCase();
+    var amount = Math.floor(Number($('adminCodeAmount').value));
+    if (!code) { st.textContent = 'Type a code first.'; return; }
+    if (!Number.isFinite(amount) || amount < 1 || amount > MAX_AMOUNT) { st.textContent = 'Enter a wallet amount between ₹1 and ₹' + MAX_AMOUNT + '.'; return; }
+    btn.disabled = true; st.textContent = 'Making code…';
+    try {
+      var ref = doc(db, 'redeemCodes', codeDocId(code));
+      var existing = await getDoc(ref);
+      if (existing.exists()) {
+        var d = existing.data() || {};
+        if (Number(d.expiresAt) > Date.now() && !confirm('"' + code + '" is already live with ₹' + d.amount + '. Replace it? (Everyone who redeemed it before can redeem the new one again.)')) {
+          st.textContent = ''; btn.disabled = false; return;
+        }
+      }
+      var now = Date.now();
+      await setDoc(ref, { code: code, amount: amount, createdAt: now, expiresAt: now + CODE_LIFETIME_MS, createdBy: window.currentUserUid || '' });
+      st.textContent = '✅ Code "' + code + '" (₹' + amount + ') is live for 24 hours.';
+      $('adminCodeInput').value = ''; $('adminCodeAmount').value = '';
+      $('adminCodeAmountRow').style.display = 'none';
+      window.loadAdminCodes();
+    } catch (e) {
+      console.error('Create code failed', e);
+      st.textContent = 'Could not create the code. Check Firestore rules for "redeemCodes".';
+    }
+    btn.disabled = false;
+  };
+
+  window.loadAdminCodes = async function () {
+    var list = $('adminCodesList');
+    if (!list || !window.isAdminUser) return;
+    try {
+      var snap = await getDocs(query(collection(db, 'redeemCodes'), orderBy('createdAt', 'desc'), limit(20)));
+      if (snap.empty) { list.innerHTML = '<div class="empty-note">No codes yet.</div>'; return; }
+      var html = '', now = Date.now();
+      snap.forEach(function (docSnap) {
+        var d = docSnap.data() || {}, live = Number(d.expiresAt) > now;
+        html += '<div class="admin-code-row"><div><b>' + escapeHtml(d.code || '') + '</b>' +
+          '<div class="acr-meta">₹' + escapeHtml(d.amount) + ' · ' + (live ? timeLeft(Number(d.expiresAt) - now) + ' left' : 'expired') + '</div></div>' +
+          '<span class="admin-code-pill ' + (live ? 'live' : 'expired') + '">' + (live ? 'LIVE' : 'EXPIRED') + '</span></div>';
+      });
+      list.innerHTML = html;
+    } catch (e) {
+      console.error('Load codes failed', e);
+      list.innerHTML = '<div class="empty-note">Codes could not be loaded. Check Firestore rules.</div>';
+    }
+  };
+
+  /* ---------- User: redeem ---------- */
+  window.redeemWalletCode = async function (suffix) {
+    var input = $('redeemInput' + suffix), st = $('redeemStatus' + suffix), btn = $('redeemBtn' + suffix);
+    if (!input || !st) return;
+    if (!window.isUserLoggedIn) { if (typeof openLogin === 'function') openLogin(); return; }
+    var raw = (input.value || '').trim();
+    st.style.color = '';
+    if (!raw) { st.textContent = 'Enter a code first.'; return; }
+    if (btn) btn.disabled = true;
+    st.textContent = 'Checking code…';
+    var id = codeDocId(raw), amount = 0;
+    try {
+      var codeRef = doc(db, 'redeemCodes', id), userRef = doc(db, 'users', window.currentUserUid);
+      await runTransaction(db, async function (tx) {
+        var cs = await tx.get(codeRef);
+        var us = await tx.get(userRef);
+        if (!cs.exists()) throw new Error('INVALID');
+        var c = cs.data() || {};
+        if (!(Number(c.expiresAt) > Date.now())) throw new Error('EXPIRED');
+        amount = Math.floor(Number(c.amount));
+        if (!Number.isFinite(amount) || amount <= 0) throw new Error('INVALID');
+        var key = id + ':' + c.createdAt;
+        var used = (us.exists() && us.data().redeemedCodes) || [];
+        if (used.indexOf(key) !== -1) throw new Error('USED');
+        tx.set(userRef, { walletBalance: increment(amount), redeemedCodes: arrayUnion(key) }, { merge: true });
+      });
+      input.value = ''; st.textContent = '';
+      showRedeemHeartPopup(amount);
+    } catch (e) {
+      var msg = e && e.message;
+      st.textContent = msg === 'EXPIRED' ? 'This code has expired.'
+        : msg === 'USED' ? 'You have already redeemed this code.'
+        : msg === 'INVALID' ? 'Invalid code.'
+        : 'Could not redeem right now. Please try again.';
+      if (['EXPIRED', 'USED', 'INVALID'].indexOf(msg) === -1) console.error('Redeem failed', e);
+    }
+    if (btn) btn.disabled = false;
+  };
+
+  /* ---------- Heart popup ---------- */
+  function hideRedeemHeartPopup() {
+    var el = $('redeemHeartPopup');
+    if (!el) return;
+    el.classList.remove('active');
+    el.querySelectorAll('.redeem-float-heart').forEach(function (n) { n.remove(); });
+  }
+  window.closeRedeemHeartPopup = function () {
+    if (typeof requestCloseOverlay === 'function') requestCloseOverlay('redeemHeart', hideRedeemHeartPopup);
+    else hideRedeemHeartPopup();
+  };
+  function showRedeemHeartPopup(amount) {
+    var el = $('redeemHeartPopup');
+    if (!el) return;
+    $('redeemHeartAmount').textContent = '+₹' + amount;
+    el.classList.add('active');
+    if (typeof pushOverlay === 'function') pushOverlay('redeemHeart', hideRedeemHeartPopup);
+    for (var i = 0; i < 14; i++) {
+      var h = document.createElement('span');
+      h.className = 'redeem-float-heart';
+      h.textContent = ['💖', '💗', '❤️', '💕'][i % 4];
+      h.style.left = (8 + Math.random() * 84) + '%';
+      h.style.fontSize = (14 + Math.random() * 16) + 'px';
+      h.style.animationDelay = (Math.random() * 1.4) + 's';
+      h.style.animationDuration = (2.2 + Math.random() * 1.4) + 's';
+      el.appendChild(h);
+    }
+  }
+})();
+</script>
+
+<script id="ditemps-thread-snake-js">
+/* ============================================================
+   # THIN THREAD "SNAKE" #
+   A thin thread that roams the page on its own "surface" layer
+   (SURFACE_Z). Anything with a higher z-index (header, popups,
+   loading screen…) sits ON TOP of it, so the thread slides under
+   those. On tap / click / swipe the thread swims to that spot,
+   curls once around it and swims away again in a random path.
+   • Change SURFACE_Z to move the surface up/down the z-index stack.
+   • Disabled automatically for "reduce motion" users.
+   ============================================================ */
+(function () {
+  if (window.__ditempsThread) return;
+  window.__ditempsThread = true;
+  if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+  var SURFACE_Z = 100;   // page content is ≤ 50, sticky header 1000, modals 2000+
+  var N = 46;            // thread segments
+  var SEG = 6.5;         // px between segments (≈ 300px long thread)
+  var TAU = Math.PI * 2;
+
+  var canvas = document.createElement('canvas');
+  canvas.id = 'ditempsThread';
+  canvas.setAttribute('aria-hidden', 'true');
+  canvas.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:' + SURFACE_Z + ';';
+  var ctx = canvas.getContext('2d');
+  var W = 0, H = 0, dpr = 1;
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+
+  // The landing page is its own full-screen layer (z-index 999999) and hides
+  // other body children, so the thread lives inside it while it is showing.
+  function place() {
+    var landing = document.getElementById('ditempsLandingPage');
+    var onLanding = !!landing && document.body.classList.contains('ditemps-landing-active');
+    var parent = onLanding ? landing : document.body;
+    canvas.style.zIndex = onLanding ? '1' : String(SURFACE_Z);
+    if (canvas.parentNode !== parent) parent.appendChild(canvas);
+  }
+  place();
+  new MutationObserver(place).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+  resize();
+  window.addEventListener('resize', resize);
+
+  function wrap(a) { while (a > Math.PI) a -= TAU; while (a < -Math.PI) a += TAU; return a; }
+  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
+
+  var s = {
+    x: W * (0.2 + Math.random() * 0.6), y: H * (0.2 + Math.random() * 0.6),
+    ang: Math.random() * TAU, speed: 46, state: 'wander',
+    tx: 0, ty: 0, lastTarget: 0, coilT: 0, coilAng: 0, coilR: 0, leaveT: 0,
+    ph1: Math.random() * 10, ph2: Math.random() * 10
+  };
+  var pts = [];
+  for (var i = 0; i < N; i++) pts.push({ x: s.x - Math.cos(s.ang) * SEG * i, y: s.y - Math.sin(s.ang) * SEG * i });
+
+  function seek(x, y) {
+    s.tx = x; s.ty = y; s.lastTarget = performance.now();
+    if (s.state !== 'seek') s.state = 'seek';
+  }
+  window.addEventListener('pointerdown', function (e) { seek(e.clientX, e.clientY); }, { passive: true, capture: true });
+  window.addEventListener('pointermove', function (e) {
+    if (e.pointerType === 'touch' || e.buttons > 0) seek(e.clientX, e.clientY);
+  }, { passive: true, capture: true });
+  window.addEventListener('touchmove', function (e) {
+    var t = e.touches && e.touches[0]; if (t) seek(t.clientX, t.clientY);
+  }, { passive: true, capture: true });
+
+  function startLeave() {
+    s.state = 'leave'; s.leaveT = 0;
+    s.ang += (Math.random() < 0.5 ? -1 : 1) * (0.6 + Math.random() * 1.2);
+    s.speed = 340;
+  }
+
+  function update(dt, t) {
+    var now = performance.now();
+    if (s.state === 'seek') {
+      var dx = s.tx - s.x, dy = s.ty - s.y, dist = Math.hypot(dx, dy);
+      var diff = wrap(Math.atan2(dy, dx) - s.ang), maxTurn = 8 * dt;
+      s.ang += clamp(diff, -maxTurn, maxTurn);
+      s.speed += (Math.min(560, 140 + dist * 4.5) - s.speed) * Math.min(1, dt * 6);
+      if (dist < 26 && now - s.lastTarget > 170) {
+        s.state = 'coil'; s.coilT = 0; s.coilAng = Math.atan2(s.y - s.ty, s.x - s.tx); s.coilR = Math.max(dist, 12);
+      } else if (now - s.lastTarget > 2600) startLeave();
+    } else if (s.state === 'coil') {
+      s.coilT += dt;
+      s.coilAng += 6.2 * dt;
+      var r = s.coilR + (9 - s.coilR) * Math.min(1, s.coilT / 0.55);
+      s.x = s.tx + Math.cos(s.coilAng) * r; s.y = s.ty + Math.sin(s.coilAng) * r;
+      s.ang = s.coilAng + Math.PI / 2;
+      if (s.coilT > 1.0) startLeave();
+      return;
+    } else if (s.state === 'leave') {
+      s.leaveT += dt;
+      s.ang += (Math.sin(t * 2.6 + s.ph1) * 1.5 + Math.sin(t * 5.1 + s.ph2) * 0.9) * dt;
+      s.speed += (46 - s.speed) * Math.min(1, dt * 1.1);
+      if (s.leaveT > 2.6) s.state = 'wander';
+    } else { // wander
+      s.ang += (Math.sin(t * 0.7 + s.ph1) * 0.9 + Math.sin(t * 1.7 + s.ph2) * 0.6) * dt * 1.1;
+      s.speed += (46 - s.speed) * Math.min(1, dt * 2);
+    }
+    // gently steer back on screen when close to (or past) an edge
+    var m = 50, ex = Math.max(0, m - s.x, s.x - (W - m)), ey = Math.max(0, m - s.y, s.y - (H - m));
+    var edge = clamp(Math.max(ex, ey) / m, 0, 1);
+    if (edge > 0 && s.state !== 'seek') {
+      var toCenter = Math.atan2(H / 2 - s.y, W / 2 - s.x);
+      s.ang += wrap(toCenter - s.ang) * edge * dt * 3;
+    }
+    s.x += Math.cos(s.ang) * s.speed * dt;
+    s.y += Math.sin(s.ang) * s.speed * dt;
+  }
+
+  function draw(t) {
+    ctx.clearRect(0, 0, W, H);
+    pts[0].x = s.x; pts[0].y = s.y;
+    for (var i = 1; i < N; i++) {
+      var a = pts[i - 1], b = pts[i], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 0.0001, k = SEG / d;
+      b.x = a.x + dx * k; b.y = a.y + dy * k;
+    }
+    // slight slither sideways
+    var q = [];
+    for (var j = 0; j < N; j++) {
+      var p0 = pts[Math.max(j - 1, 0)], p1 = pts[Math.min(j + 1, N - 1)];
+      var tx = p0.x - p1.x, ty = p0.y - p1.y, tl = Math.hypot(tx, ty) || 1;
+      var off = Math.sin(t * 5 - j * 0.55) * 1.7 * Math.min(1, j / 6);
+      q.push({ x: pts[j].x - (ty / tl) * off, y: pts[j].y + (tx / tl) * off });
+    }
+    var dark = document.documentElement.classList.contains('ditemps-dark');
+    var rgb = dark ? '236,224,196' : '52,44,36', baseA = dark ? 0.7 : 0.6;
+    ctx.lineCap = 'butt'; ctx.lineJoin = 'round';
+    for (var n = N - 1; n >= 1; n--) {
+      var f = 1 - n / N;
+      var sx = n === N - 1 ? q[n].x : (q[n].x + q[n + 1].x) / 2, sy = n === N - 1 ? q[n].y : (q[n].y + q[n + 1].y) / 2;
+      var ex2 = (q[n].x + q[n - 1].x) / 2, ey2 = (q[n].y + q[n - 1].y) / 2;
+      ctx.beginPath(); ctx.moveTo(sx, sy); ctx.quadraticCurveTo(q[n].x, q[n].y, ex2, ey2);
+      ctx.strokeStyle = 'rgba(' + rgb + ',' + (baseA * (0.12 + 0.88 * Math.pow(f, 0.8))).toFixed(3) + ')';
+      ctx.lineWidth = 0.6 + f * 1.9;
+      ctx.stroke();
+    }
+    ctx.beginPath(); ctx.arc(q[0].x, q[0].y, 1.9, 0, TAU);
+    ctx.fillStyle = 'rgba(' + rgb + ',' + baseA + ')'; ctx.fill();
+  }
+
+  var last = 0, raf = 0;
+  function frame(ts) {
+    raf = requestAnimationFrame(frame);
+    var dt = Math.min(0.05, (ts - last) / 1000 || 0.016); last = ts;
+    update(dt, ts / 1000); draw(ts / 1000);
+  }
+  function start() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
+  function stop() { if (raf) { cancelAnimationFrame(raf); raf = 0; } }
+  document.addEventListener('visibilitychange', function () { document.hidden ? stop() : start(); });
+  start();
+})();
+</script>
 </body>
 </html>
