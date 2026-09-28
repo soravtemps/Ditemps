@@ -4133,6 +4133,145 @@ html.ditemps-dark .codes-row button { background:#f5f5f5; color:#111; }
 @keyframes redeemFloatUp { 0% { transform:translateY(0) scale(.6); opacity:0; } 15% { opacity:.95; } 100% { transform:translateY(-55vh) scale(1.15); opacity:0; } }
 @media (prefers-reduced-motion:reduce) { .redeem-heart { animation:redeemHeartPop .01s both; } .redeem-float-heart { display:none; } }
 </style>
+<style id="ditemps-detail-pro-ux">
+/* ===== Template detail page: professional UX (every button = border + shadow) ===== */
+#detail-section-wrapper{--dp-line:#e6e0e4;--dp-card:#fff;--dp-ink:#171717;--dp-mut:#7a7480;--dp-sh:0 4px 14px rgba(40,20,50,.09);--dp-sh2:0 8px 22px rgba(40,20,50,.14)}
+#detail-section-wrapper button,#detail-section-wrapper .fullscreen-link{border:1.5px solid var(--dp-ink)!important;box-shadow:var(--dp-sh)!important;transition:transform .15s ease,box-shadow .15s ease!important;font-family:var(--font-body)}
+#detail-section-wrapper button:hover,#detail-section-wrapper .fullscreen-link:hover{transform:translateY(-2px)!important;box-shadow:var(--dp-sh2)!important}
+#detail-section-wrapper button:active{transform:scale(.97)!important}
+#detail-section-wrapper .back-btn{border-radius:999px!important;padding:9px 16px!important;background:#fff!important;font-weight:700!important;margin-bottom:14px!important}
+#detail-section-wrapper .detail-hero{border:1.5px solid var(--dp-line)!important;border-radius:26px!important;height:250px!important;box-shadow:var(--dp-sh2)!important}
+#detail-section-wrapper .detail-hero-heart{width:42px!important;height:42px!important;background:#fff!important;color:#171717!important;border-color:var(--dp-ink)!important}
+#detail-section-wrapper .detail-hero-heart.active{color:#e85b86!important}
+#detail-section-wrapper .detail-name{font-size:28px!important;line-height:1.15!important;margin:14px 0 8px!important}
+#detail-section-wrapper .detail-desc{font-size:14px!important;line-height:1.6!important}
+#detail-section-wrapper .detail-metric{border:1.5px solid var(--dp-line)!important;background:#fff!important;box-shadow:0 2px 6px rgba(40,20,50,.06)}
+#detail-section-wrapper .detail-action-row{display:grid!important;grid-template-columns:1fr 1fr;gap:10px!important}
+#detail-section-wrapper .detail-action-row button{border-radius:14px!important;padding:12px!important;background:#fff!important;color:var(--dp-ink)!important;font-weight:700!important}
+#detail-section-wrapper .detail-action-row button.active{background:#fff0f5!important;color:#c61f67!important;border-color:#c61f67!important}
+#detail-section-wrapper .detail-cta-row{display:grid!important;grid-template-columns:1.25fr 1fr;gap:10px!important;margin:6px 0 14px!important}
+#detail-section-wrapper .detail-cta-row button{width:100%!important;flex:none!important;min-height:52px!important;border-radius:16px!important;font-size:15px!important;font-weight:800!important}
+#detail-section-wrapper .detail-secondary-btn{border-color:#5b21b6!important}
+#detail-section-wrapper .detail-try-btn{background:#fff!important;color:var(--dp-ink)!important}
+.detail-feature-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 0 18px}
+.detail-feature-chips div{border:1.5px solid var(--dp-line,#e6e0e4);border-radius:16px;background:#fff;padding:10px 4px;text-align:center;box-shadow:0 2px 8px rgba(40,20,50,.06)}
+.detail-feature-chips i{display:block;font-style:normal;font-size:20px;margin-bottom:4px}
+.detail-feature-chips span{font-size:10.5px;font-weight:700;color:#5d5862;line-height:1.2;display:block}
+#detail-section-wrapper .live-preview-wrap,#detail-section-wrapper .detail-info-card,#detail-section-wrapper .detail-review-section,#detail-section-wrapper .detail-platform-section,#detail-section-wrapper .detail-offer-section>div,#detail-section-wrapper .detail-discovery-section{border:1.5px solid var(--dp-line)!important;border-radius:22px!important;background:#fff!important;box-shadow:var(--dp-sh)!important}
+#detail-section-wrapper .detail-offer-section{border:0!important;background:none!important;padding:0!important;box-shadow:none!important}
+#detail-section-wrapper .detail-offer-section>div{padding:14px!important}
+#detail-section-wrapper .detail-info-eyebrow{display:inline-block;background:#f6f1f4;border:1px solid var(--dp-line);border-radius:999px;padding:4px 10px;color:#6b4a5c!important}
+#detail-section-wrapper .detail-section-heading-row h3,#detail-section-wrapper .detail-platform-section h3{font-family:var(--font-display);font-size:21px!important;font-weight:600}
+#detail-section-wrapper .detail-platform-grid div{border:1.5px solid var(--dp-line)!important;background:#fcfafb!important;border-radius:16px!important;box-shadow:0 2px 8px rgba(40,20,50,.05)}
+#detail-section-wrapper .detail-review-summary{border:1.5px solid var(--dp-line);border-radius:18px;padding:14px!important;background:#fffaf3;margin-bottom:12px}
+#detail-section-wrapper .review-score strong{font-size:40px!important;color:#b78316}
+#detail-section-wrapper .review-score span{color:#e7b33f}
+#detail-section-wrapper .review-bars i{background:#eee3d2!important}
+#detail-section-wrapper .review-bars em{background:#e7b33f!important}
+#detail-section-wrapper .detail-review{border:1.5px solid var(--dp-line)!important;border-radius:18px;padding:12px!important;background:#fff;box-shadow:0 2px 8px rgba(40,20,50,.05)}
+#detail-section-wrapper .review-avatar{background:linear-gradient(135deg,#a78bfa,#7c3aed)!important;color:#fff;border:1.5px solid #5b21b6}
+#detail-section-wrapper .review-main{min-width:0;flex:1}
+#detail-section-wrapper .review-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+#detail-section-wrapper .review-head b{font-size:14px}
+#detail-section-wrapper .review-date{font-size:11px;color:var(--dp-mut);margin:0}
+#detail-section-wrapper .review-stars{color:#e7b33f;font-size:13px;letter-spacing:2px;margin-top:2px}
+#detail-section-wrapper .detail-review p{font-size:13px;line-height:1.5;margin:6px 0 0;word-break:break-word}
+#detail-section-wrapper .detail-more-btn,#detail-section-wrapper .detail-rate-btn{display:block;width:100%;margin-top:12px;padding:13px;border-radius:14px!important;background:#fff!important;color:var(--dp-ink)!important;font-weight:800;font-size:14px}
+#detail-section-wrapper .detail-rate-btn{border-color:#b78316!important;color:#8a6210!important;background:#fffaf0!important}
+#detail-section-wrapper .fullscreen-link{border-radius:999px;background:#fff;color:var(--dp-ink)!important;padding:9px 18px}
+#detail-section-wrapper .detail-mini-card{border:1.5px solid var(--dp-line)!important;border-radius:16px!important;background:#fff!important;box-shadow:0 3px 10px rgba(40,20,50,.07)}
+#detail-section-wrapper .detail-footer-bar{border:1.5px solid var(--dp-ink)!important;border-radius:22px;padding:10px 12px 10px 18px!important;margin:16px 0 6px!important;bottom:10px;background:rgba(255,255,255,.98)!important;box-shadow:0 10px 30px rgba(40,20,50,.22)!important}
+#detail-section-wrapper .detail-footer-bar .price{font-size:20px!important}
+#detail-section-wrapper .detail-cta-heart{background:#fff!important;color:var(--dp-ink)!important;border-radius:14px!important}
+#detail-section-wrapper .detail-cta-heart.active{color:#e85b86!important}
+#detail-section-wrapper .buy-btn{border-color:#5b21b6!important;border-radius:16px!important}
+@media(max-width:380px){.detail-feature-chips{grid-template-columns:repeat(2,1fr)}}
+html.ditemps-dark #detail-section-wrapper{--dp-line:#33353c;--dp-ink:#f3f3f5;--dp-mut:#a9abb2;--dp-sh:0 4px 14px rgba(0,0,0,.4);--dp-sh2:0 8px 22px rgba(0,0,0,.5)}
+html.ditemps-dark #detail-section-wrapper .back-btn,html.ditemps-dark #detail-section-wrapper .detail-action-row button,html.ditemps-dark #detail-section-wrapper .detail-try-btn,html.ditemps-dark #detail-section-wrapper .detail-more-btn,html.ditemps-dark #detail-section-wrapper .detail-hero-heart,html.ditemps-dark #detail-section-wrapper .detail-cta-heart,html.ditemps-dark #detail-section-wrapper .fullscreen-link,html.ditemps-dark .detail-feature-chips div,html.ditemps-dark #detail-section-wrapper .detail-metric,html.ditemps-dark #detail-section-wrapper .detail-info-card,html.ditemps-dark #detail-section-wrapper .detail-review-section,html.ditemps-dark #detail-section-wrapper .detail-platform-section,html.ditemps-dark #detail-section-wrapper .detail-offer-section>div,html.ditemps-dark #detail-section-wrapper .detail-discovery-section,html.ditemps-dark #detail-section-wrapper .detail-review,html.ditemps-dark #detail-section-wrapper .detail-mini-card,html.ditemps-dark #detail-section-wrapper .detail-platform-grid div,html.ditemps-dark #detail-section-wrapper .live-preview-wrap{background:#191b20!important;color:#f3f3f5!important}
+html.ditemps-dark #detail-section-wrapper .detail-footer-bar{background:rgba(16,17,20,.98)!important}
+html.ditemps-dark #detail-section-wrapper .detail-review-summary{background:#22242a}
+html.ditemps-dark .detail-feature-chips span{color:#a9abb2}
+html.ditemps-dark #detail-section-wrapper .detail-info-eyebrow{background:#26282e;color:#d5d6da!important}
+</style>
+<style id="ditemps-detail-compact">
+/* compact buttons + line icons instead of emojis */
+#detail-section-wrapper .dp-ic{width:16px;height:16px;display:inline-block;vertical-align:-3px;margin-right:4px;flex:none}
+#detail-section-wrapper .detail-platform-grid b .dp-ic,#detail-section-wrapper .detail-offer-section b .dp-ic{color:#c61f67}
+#detail-section-wrapper .back-btn{padding:6px 14px!important;font-size:12px!important;margin-bottom:10px!important}
+#detail-section-wrapper .detail-hero{height:220px!important}
+#detail-section-wrapper .detail-hero-heart{width:34px!important;height:34px!important;font-size:16px!important}
+#detail-section-wrapper .detail-name{font-size:24px!important}
+#detail-section-wrapper .detail-action-row{display:flex!important;flex-wrap:wrap;gap:8px!important}
+#detail-section-wrapper .detail-action-row button{display:inline-flex!important;align-items:center;justify-content:center;width:auto!important;min-height:0!important;height:34px;padding:0 14px!important;font-size:12.5px!important;border-radius:999px!important;border-width:1px!important}
+#detail-section-wrapper .detail-cta-row{display:flex!important;flex-wrap:wrap;gap:8px!important;margin:4px 0 16px!important}
+#detail-section-wrapper .detail-cta-row button{display:inline-flex!important;align-items:center;justify-content:center;width:auto!important;flex:0 0 auto!important;min-height:0!important;height:40px;padding:0 18px!important;font-size:13.5px!important;font-weight:700!important;border-radius:999px!important;border-width:1px!important}
+#detail-section-wrapper button{box-shadow:0 2px 8px rgba(40,20,50,.12)!important}
+#detail-section-wrapper button:hover{transform:translateY(-1px)!important;box-shadow:0 4px 12px rgba(40,20,50,.16)!important}
+.detail-feature-chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:0 0 20px}
+.detail-feature-chips div{border:0!important;background:none!important;box-shadow:none!important;padding:0!important}
+.detail-feature-chips i{display:grid;place-items:center;width:44px;height:44px;margin:0 auto 6px;border-radius:50%;background:#fbe9ef;color:#c22a63}
+.detail-feature-chips i .dp-ic{width:20px;height:20px;margin:0;vertical-align:0}
+.detail-feature-chips span{font-size:11px!important;font-weight:600!important;color:#4a4550!important}
+#detail-section-wrapper .detail-more-btn,#detail-section-wrapper .detail-rate-btn{display:flex!important;align-items:center;justify-content:center;width:auto!important;height:38px;margin:12px auto 0!important;padding:0 20px!important;font-size:13px!important;border-radius:999px!important;border-width:1px!important}
+#detail-section-wrapper .fullscreen-link{padding:7px 14px!important;font-size:12px!important;border-width:1px!important;box-shadow:0 2px 8px rgba(40,20,50,.12)!important}
+#detail-section-wrapper .detail-footer-bar{border-width:1px!important;border-radius:18px!important;padding:8px 10px 8px 16px!important;bottom:8px}
+#detail-section-wrapper .detail-footer-bar .price{font-size:17px!important}
+#detail-section-wrapper .detail-buy-actions{gap:8px}
+#detail-section-wrapper #detailBuyBtn{height:42px!important;min-height:0!important;padding:0 18px!important;font-size:14px!important;border-radius:999px!important;border-width:1px!important}
+#detail-section-wrapper .detail-cta-heart{width:40px!important;height:40px!important;flex:0 0 40px!important;border-radius:50%!important;font-size:16px!important;border-width:1px!important}
+html.ditemps-dark .detail-feature-chips i{background:#3a2530;color:#ff8fb3}
+html.ditemps-dark .detail-feature-chips span{color:#c9cbd1!important}
+</style>
+<style id="ditemps-polish">
+/* ===== Polish: thin light borders, soft shadows, smooth + light animations, dark-mode fixes ===== */
+html{scroll-behavior:smooth}
+button,a,.template-card,.detail-mini-card{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.ic{display:inline-block;width:1.05em;height:1.05em;vertical-align:-.16em;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex:none}
+.ic.f{fill:currentColor;stroke-width:1.5}.ic-heart{color:#e85b86}.ic-star{color:#e7b33f}.ic-flame{color:#f2711c}
+/* performance: cheap effects only (no big blurs, no infinite shadow/gradient repaints) */
+.navbar,.ditemps-top-header,.dl-nav,.modal-overlay,.detail-footer-bar{backdrop-filter:none!important;-webkit-backdrop-filter:none!important}
+.site-prep-loader{backdrop-filter:blur(10px)!important;-webkit-backdrop-filter:blur(10px)!important}
+.section-title:after{animation:none!important}
+.profile-header,.profile-header img,.profile-header .avatar{animation:none!important}
+.dl-strip-track{will-change:transform}
+@keyframes referFabPulseYellow{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+.templates-grid>.template-card{content-visibility:auto;contain-intrinsic-size:auto 320px}
+/* smooth entrances */
+@keyframes dtFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes dtPop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+#all-section-wrapper,#premium-section-wrapper,#surprise-section-wrapper,#cards-section-wrapper,#about-section-wrapper,#admin-section-wrapper,#detail-section-wrapper{animation:dtFade .38s cubic-bezier(.2,.8,.2,1)}
+.modal-overlay.active .modal-box,.modal-overlay.active .reward-popup-box{animation:dtPop .28s cubic-bezier(.2,.8,.2,1)}
+.template-card{animation:dtFade .4s cubic-bezier(.2,.8,.2,1) both}
+.template-card:nth-child(2){animation-delay:.04s}.template-card:nth-child(3){animation-delay:.08s}.template-card:nth-child(4){animation-delay:.12s}.template-card:nth-child(n+5){animation-delay:.16s}
+button,.view-btn,.template-card,.detail-mini-card,.category-chip,.ditemps-section-chip{transition:transform .2s cubic-bezier(.2,.8,.2,1),box-shadow .2s ease,background-color .2s ease,border-color .2s ease,color .2s ease}
+button:hover,.btn:hover,a.button:hover{transform:none;filter:none;box-shadow:inherit}
+@media(hover:hover){button:hover{transform:translateY(-1px)}.templates-grid>*:hover{transform:translateY(-3px) scale(1)!important;box-shadow:0 10px 24px rgba(20,10,30,.12)!important}}
+button:active{transform:scale(.97)}
+/* thin, light borders + soft shadows */
+.ditemps-rect-search{border:1px solid #e2dde1!important}.ditemps-filter-btn{border:1px solid #e2dde1!important}
+.template-card{border:1px solid #ebe6ea!important;box-shadow:0 1px 2px rgba(20,10,30,.04),0 4px 14px rgba(20,10,30,.06)!important}
+#detail-section-wrapper#detail-section-wrapper{--dp-bd:#e5dfe4;--dp-bd2:#d9d2d8;--dp-ink:#171717}
+html.ditemps-dark #detail-section-wrapper#detail-section-wrapper{--dp-bd:#2c2e35;--dp-bd2:#3a3d45;--dp-ink:#f3f3f5}
+#detail-section-wrapper#detail-section-wrapper :is(button,.fullscreen-link){border:1px solid var(--dp-bd2)!important;box-shadow:0 1px 2px rgba(20,10,30,.05),0 3px 10px rgba(20,10,30,.07)!important}
+#detail-section-wrapper#detail-section-wrapper :is(.detail-secondary-btn,.buy-btn,#detailBuyBtn){border-color:rgba(91,33,182,.35)!important;box-shadow:0 2px 10px rgba(109,40,217,.22)!important}
+#detail-section-wrapper#detail-section-wrapper :is(.live-preview-wrap,.detail-info-card,.detail-review-section,.detail-platform-section,.detail-discovery-section,.detail-review,.detail-mini-card,.detail-platform-grid div,.detail-review-summary,.detail-offer-section>div,.detail-hero,.detail-metric){border:1px solid var(--dp-bd)!important;box-shadow:0 1px 2px rgba(20,10,30,.04),0 4px 14px rgba(20,10,30,.06)!important}
+#detail-section-wrapper#detail-section-wrapper .detail-footer-bar{border:1px solid var(--dp-bd)!important;box-shadow:0 4px 18px rgba(20,10,30,.12)!important}
+.detail-feature-chips div{border:0!important;box-shadow:none!important}
+/* dark mode gaps */
+html.ditemps-dark{--bg-main:#101114}
+html.ditemps-dark .auth-sheet{background:#17181c}
+html.ditemps-dark .auth-sheet-header{background:#1d1f25;border-bottom-color:#2c2e35}
+html.ditemps-dark .auth-sheet-brand,html.ditemps-dark .auth-field input,html.ditemps-dark .auth-google-btn{color:#f3f3f5}
+html.ditemps-dark .auth-field input,html.ditemps-dark .auth-google-btn{background:#1d1f25;border-color:#33353c}
+html.ditemps-dark .referral-stat-card,html.ditemps-dark .daily-checkin-strip,html.ditemps-dark .wallet-box,html.ditemps-dark .link-result,html.ditemps-dark .codes-admin-card{background:#191b20!important;border-color:#2c2e35!important;color:#f3f3f5}
+html.ditemps-dark .checkin-day-card{background:#1d1f25;border-color:#2c2e35}
+html.ditemps-dark .checkin-day-card .cd-amount,html.ditemps-dark .daily-checkin-strip h4{color:#f3f3f5}
+html.ditemps-dark .checkin-day-card.is-today{background:#f3f3f5}html.ditemps-dark .checkin-day-card.is-today .cd-label,html.ditemps-dark .checkin-day-card.is-today .cd-amount{color:#111}
+html.ditemps-dark .category-chip,html.ditemps-dark .badge.cat{background:#26282e!important;color:#c9cbd1!important;border-color:#33353c!important}
+html.ditemps-dark .template-card{border-color:#2a2c33!important;box-shadow:0 4px 14px rgba(0,0,0,.35)!important}
+html.ditemps-dark .ditemps-rect-search,html.ditemps-dark .ditemps-filter-btn{border-color:#33353c!important}
+html.ditemps-dark .detail-shot{border-color:#2c2e35}
+</style>
 </head>
 <body>
 
@@ -4619,12 +4758,19 @@ html.ditemps-dark .codes-row button { background:#f5f5f5; color:#111; }
       <p class="detail-desc" id="detailDesc"></p>
       <div class="detail-metrics" id="detailMetrics"></div>
       <div class="detail-action-row">
-        <button class="wishlist-btn" id="detailThumbLikeBtn" onclick="likeCurrentTemplate()" title="Like this template" aria-label="Like this template">👍 Like</button>
-        <button class="detail-share-btn" id="detailShareBtn" onclick="shareCurrentTemplate()">↗ Share</button>
+        <button class="wishlist-btn" id="detailThumbLikeBtn" onclick="likeCurrentTemplate()" title="Like this template" aria-label="Like this template"><svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3zM7 11l4-8a2.5 2.5 0 0 1 2.5 2.5V9H19a2 2 0 0 1 2 2.3l-1 6.5A2 2 0 0 1 18 19.5H7"/></svg> Like</button>
+        <button class="detail-share-btn" id="detailShareBtn" onclick="shareCurrentTemplate()"><svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v14"/></svg> Share</button>
       </div>
 
       <div class="detail-cta-row">
-        <button class="detail-secondary-btn" id="detailPersonaliseBtn">✦ Personalise</button>
+        <button class="detail-secondary-btn" id="detailPersonaliseBtn"><svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></svg> Personalise</button>
+        <button class="detail-try-btn" type="button" onclick="var w=document.getElementById('livePreviewWrap');if(w&&w.style.display!=='none')w.scrollIntoView({behavior:'smooth',block:'center'});"><svg class="dp-ic" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4.5v15l12-7.5z"/></svg> Try Live</button>
+      </div>
+      <div class="detail-feature-chips">
+        <div><i><svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg></i><span>Mobile first</span></div>
+        <div><i><svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></svg></i><span>Instant link</span></div>
+        <div><i><svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg></i><span>Fully editable</span></div>
+        <div><i><svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/></svg></i><span>Free QR</span></div>
       </div>
 
       <div class="live-preview-wrap" id="livePreviewWrap" style="display:none;">
@@ -4668,16 +4814,16 @@ html.ditemps-dark .codes-row button { background:#f5f5f5; color:#111; }
         <div class="detail-info-eyebrow">BUILT FOR WHAT HAPPENS AFTER</div>
         <h3>More than just a template</h3>
         <div class="detail-platform-grid">
-          <div><b>🔔 Open notifications</b><span>Get notified when your gift is opened.</span></div>
-          <div><b>📊 Session summaries</b><span>See how long they spent on each screen.</span></div>
-          <div><b>🔳 Fancy QR codes</b><span>Download and share a custom QR code.</span></div>
-          <div><b>✏️ Edit anytime</b><span>Change photos, messages or music after it is live.</span></div>
+          <div><b><svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 8 3 8H3s3-1 3-8zM10.3 20a2 2 0 0 0 3.4 0"/></svg> Open notifications</b><span>Get notified when your gift is opened.</span></div>
+          <div><b><svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg> Session summaries</b><span>See how long they spent on each screen.</span></div>
+          <div><b><svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/></svg> Fancy QR codes</b><span>Download and share a custom QR code.</span></div>
+          <div><b><svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4L16.5 4.5a2 2 0 0 1 3 3L8 19l-4 1zM14 7l3 3"/></svg> Edit anytime</b><span>Change photos, messages or music after it is live.</span></div>
         </div>
       </section>
 
       <section class="detail-offer-section">
-        <div><b>🏷️ Promo codes</b><span>Apply a promo code at checkout when an offer is available.</span></div>
-        <div><b>🎁 Refer &amp; earn</b><span>Share Ditemps with friends and earn rewards when they create.</span></div>
+        <div><b><svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4h8l10 10-8 8L3 12z"/><circle cx="7.5" cy="8.5" r="1"/></svg> Promo codes</b><span>Apply a promo code at checkout when an offer is available.</span></div>
+        <div><b><svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M12 8c-1-3-5-4-5-1.5S10 8 12 8zM12 8c1-3 5-4 5-1.5S14 8 12 8z"/></svg> Refer &amp; earn</b><span>Share Ditemps with friends and earn rewards when they create.</span></div>
       </section>
 
       <section class="detail-discovery-section">
@@ -4686,7 +4832,7 @@ html.ditemps-dark .codes-row button { background:#f5f5f5; color:#111; }
       </section>
 
       <section class="detail-discovery-section">
-        <div class="detail-section-heading-row"><div><div class="detail-info-eyebrow">TRENDING 🏆</div><h3>What everyone's creating right now</h3></div></div>
+        <div class="detail-section-heading-row"><div><div class="detail-info-eyebrow">TRENDING</div><h3>What everyone's creating right now</h3></div></div>
         <div class="detail-mini-grid" id="detailTrendingGrid"></div>
       </section>
 
@@ -7762,6 +7908,8 @@ var qrcode = function() {
       renderDetailMiniCards('detailFreeGrid', free);
     }
 
+    window.DT_THUMB = '<svg class="dp-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 11v9H4a1 1 0 0 1-1-1v-7a1 1 0 0 1 1-1h3zM7 11l4-8a2.5 2.5 0 0 1 2.5 2.5V9H19a2 2 0 0 1 2 2.3l-1 6.5A2 2 0 0 1 18 19.5H7"/></svg>';
+    window.__reviewsExpanded = window.__reviewsExpanded || new Set();
     function renderDetailReviews(item) {
       const combined = getCombinedStats(item);
       const count = combined.reviewCount;
@@ -7778,10 +7926,19 @@ var qrcode = function() {
       // popup. These sit on top of the baseline count/average above —
       // there are no individual "fake" review entries, only the numbers.
       const reviews = templateReviewListCache.get(item.name) || [];
-      if (list) list.innerHTML = reviews.length ? reviews.slice(0,20).map(r => {
+      if (list) list.innerHTML = reviews.length ? reviews.slice(0, window.__reviewsExpanded.has(item.name) ? 50 : 10).map(r => {
         const when = r.createdAt && typeof r.createdAt.toDate === 'function' ? r.createdAt.toDate().toLocaleDateString() : 'Recently';
-        return `<article class="detail-review"><div class="review-avatar">${escapeDetailText((r.name || r.email || 'U').slice(0,1).toUpperCase())}</div><div><b>${escapeDetailText(r.name || 'Verified user')}</b><span>${escapeDetailText(r.email || '')} · ${escapeDetailText(when)} · ★ ${Number(r.rating || 0).toFixed(1)}</span><p>${escapeDetailText(r.text || '')}</p></div></article>`;
+        const n = Math.max(0, Math.min(5, Math.round(Number(r.rating || 0))));
+        return `<article class="detail-review"><div class="review-avatar">${escapeDetailText((r.name || 'U').slice(0,1).toUpperCase())}</div><div class="review-main"><div class="review-head"><b>${escapeDetailText(r.name || 'Verified user')}</b><span class="review-date">${escapeDetailText(when)}</span></div><div class="review-stars">${'★'.repeat(n)}${'☆'.repeat(5-n)}</div>${r.text ? `<p>${escapeDetailText(r.text)}</p>` : ''}</div></article>`;
       }).join('') : `<div class="detail-empty-reviews">Reviews will appear here as customers share their experience. <span>${count ? `${count} reviews are recorded for this template.` : ''}</span></div>`;
+      const oldMore = document.getElementById('detailReviewMoreBtn'); if (oldMore) oldMore.remove();
+      if (list && reviews.length > 10 && !window.__reviewsExpanded.has(item.name)) {
+        const mb = document.createElement('button');
+        mb.type = 'button'; mb.id = 'detailReviewMoreBtn'; mb.className = 'detail-more-btn';
+        mb.textContent = `See more reviews (${Math.min(reviews.length, 50) - 10} more)`;
+        mb.onclick = () => { window.__reviewsExpanded.add(item.name); renderDetailReviews(item); };
+        list.after(mb);
+      }
       const rateBtn = document.getElementById('detailRateBtn');
       if (rateBtn) rateBtn.style.display = hasUserRated(item.name) ? 'none' : 'inline-block';
     }
@@ -9561,7 +9718,7 @@ var qrcode = function() {
         const name = currentDetailItem.name;
         const alreadyLiked = likedTemplateCache.has(name) || !!localStorage.getItem('ditemps_liked_' + encodeURIComponent(name));
         thumbBtn.classList.toggle('active', alreadyLiked);
-        thumbBtn.textContent = alreadyLiked ? '👍 Liked' : '👍 Like';
+        thumbBtn.innerHTML = window.DT_THUMB + (alreadyLiked ? ' Liked' : ' Like');
       }
     }
 
@@ -11378,164 +11535,104 @@ window.showDitempsLandingPage = function() {
   }
 })();
 </script>
-
-<script id="ditemps-thread-snake-js">
-/* ============================================================
-   # THIN THREAD "SNAKE" #
-   A thin thread that roams the page on its own "surface" layer
-   (SURFACE_Z). Anything with a higher z-index (header, popups,
-   loading screen…) sits ON TOP of it, so the thread slides under
-   those. On tap / click (not swipe) the thread swims to that spot,
-   curls once around it and swims away again in a random path.
-   • Change SURFACE_Z to move the surface up/down the z-index stack.
-   • Disabled automatically for "reduce motion" users.
-   ============================================================ */
+<script id="ditemps-tap-animations">
+/* Tap animations: ripple on every button + heart burst when something gets liked / wishlisted.
+   Fully off for visitors who have "reduce motion" enabled. */
 (function () {
-  if (window.__ditempsThread) return;
-  window.__ditempsThread = true;
+  if (window.__ditempsTapFx) return; window.__ditempsTapFx = true;
   if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  var st = document.createElement('style');
+  st.textContent = '.dt-ripple{position:absolute;border-radius:50%;background:currentColor;opacity:.25;pointer-events:none;transform:scale(0);animation:dtRipple .55s ease-out forwards}'
+    + '@keyframes dtRipple{to{transform:scale(1);opacity:0}}'
+    + '.dt-heart{position:fixed;z-index:100000;pointer-events:none;color:#e85b86;line-height:1;animation:dtHeart .8s ease-out forwards}'
+    + '@keyframes dtHeart{0%{transform:translate(-50%,-50%) scale(.4);opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1.1);opacity:0}}';
+  document.head.appendChild(st);
 
-  var SURFACE_Z = 100;   // page content is ≤ 50, sticky header 1000, modals 2000+
-  var N = 46;            // thread segments
-  var SEG = 6.5;         // px between segments (≈ 300px long thread)
-  var TAU = Math.PI * 2;
+  document.addEventListener('pointerdown', function (e) {
+    var b = e.target.closest && e.target.closest('button, .fullscreen-link, .login-btn, .view-btn');
+    if (!b || b.disabled) return;
+    var r = b.getBoundingClientRect(), size = Math.max(r.width, r.height) * 2;
+    if (getComputedStyle(b).position === 'static') b.style.position = 'relative';
+    b.style.overflow = 'hidden';
+    var d = document.createElement('span');
+    d.className = 'dt-ripple';
+    d.style.cssText = 'width:' + size + 'px;height:' + size + 'px;left:' + (e.clientX - r.left - size / 2) + 'px;top:' + (e.clientY - r.top - size / 2) + 'px';
+    b.appendChild(d);
+    setTimeout(function () { d.remove(); }, 600);
+  }, { passive: true });
 
-  var canvas = document.createElement('canvas');
-  canvas.id = 'ditempsThread';
-  canvas.setAttribute('aria-hidden', 'true');
-  canvas.style.cssText = 'position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:' + SURFACE_Z + ';';
-  var ctx = canvas.getContext('2d');
-  var W = 0, H = 0, dpr = 1;
-
-  function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    W = window.innerWidth; H = window.innerHeight;
-    canvas.width = Math.round(W * dpr); canvas.height = Math.round(H * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  }
-
-  // The landing page is its own full-screen layer (z-index 999999) and hides
-  // other body children, so the thread lives inside it while it is showing.
-  function place() {
-    var landing = document.getElementById('ditempsLandingPage');
-    var onLanding = !!landing && document.body.classList.contains('ditemps-landing-active');
-    var parent = onLanding ? landing : document.body;
-    canvas.style.zIndex = onLanding ? '1' : String(SURFACE_Z);
-    if (canvas.parentNode !== parent) parent.appendChild(canvas);
-  }
-  place();
-  new MutationObserver(place).observe(document.body, { attributes: true, attributeFilter: ['class'] });
-  resize();
-  window.addEventListener('resize', resize);
-
-  function wrap(a) { while (a > Math.PI) a -= TAU; while (a < -Math.PI) a += TAU; return a; }
-  function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
-
-  var s = {
-    x: W * (0.2 + Math.random() * 0.6), y: H * (0.2 + Math.random() * 0.6),
-    ang: Math.random() * TAU, speed: 46, state: 'wander',
-    tx: 0, ty: 0, lastTarget: 0, coilT: 0, coilAng: 0, coilR: 0, leaveT: 0,
-    ph1: Math.random() * 10, ph2: Math.random() * 10
-  };
-  var pts = [];
-  for (var i = 0; i < N; i++) pts.push({ x: s.x - Math.cos(s.ang) * SEG * i, y: s.y - Math.sin(s.ang) * SEG * i });
-
-  function seek(x, y) {
-    s.tx = x; s.ty = y; s.lastTarget = performance.now();
-    if (s.state !== 'seek') s.state = 'seek';
-  }
-  // Only a real tap / click calls the thread. Swipes and scrolls are ignored
-  // (the browser doesn't fire "click" after a swipe or scroll gesture).
-  window.addEventListener('click', function (e) {
-    if (e.clientX === 0 && e.clientY === 0 && e.detail === 0) return; // synthetic/keyboard clicks
-    seek(e.clientX, e.clientY);
-  }, { passive: true, capture: true });
-
-  function startLeave() {
-    s.state = 'leave'; s.leaveT = 0;
-    s.ang += (Math.random() < 0.5 ? -1 : 1) * (0.6 + Math.random() * 1.2);
-    s.speed = 340;
-  }
-
-  function update(dt, t) {
-    var now = performance.now();
-    if (s.state === 'seek') {
-      var dx = s.tx - s.x, dy = s.ty - s.y, dist = Math.hypot(dx, dy);
-      var diff = wrap(Math.atan2(dy, dx) - s.ang), maxTurn = 8 * dt;
-      s.ang += clamp(diff, -maxTurn, maxTurn);
-      s.speed += (Math.min(560, 140 + dist * 4.5) - s.speed) * Math.min(1, dt * 6);
-      if (dist < 26 && now - s.lastTarget > 170) {
-        s.state = 'coil'; s.coilT = 0; s.coilAng = Math.atan2(s.y - s.ty, s.x - s.tx); s.coilR = Math.max(dist, 12);
-      } else if (now - s.lastTarget > 2600) startLeave();
-    } else if (s.state === 'coil') {
-      s.coilT += dt;
-      s.coilAng += 6.2 * dt;
-      var r = s.coilR + (9 - s.coilR) * Math.min(1, s.coilT / 0.55);
-      s.x = s.tx + Math.cos(s.coilAng) * r; s.y = s.ty + Math.sin(s.coilAng) * r;
-      s.ang = s.coilAng + Math.PI / 2;
-      if (s.coilT > 1.0) startLeave();
-      return;
-    } else if (s.state === 'leave') {
-      s.leaveT += dt;
-      s.ang += (Math.sin(t * 2.6 + s.ph1) * 1.5 + Math.sin(t * 5.1 + s.ph2) * 0.9) * dt;
-      s.speed += (46 - s.speed) * Math.min(1, dt * 1.1);
-      if (s.leaveT > 2.6) s.state = 'wander';
-    } else { // wander
-      s.ang += (Math.sin(t * 0.7 + s.ph1) * 0.9 + Math.sin(t * 1.7 + s.ph2) * 0.6) * dt * 1.1;
-      s.speed += (46 - s.speed) * Math.min(1, dt * 2);
+  function burst(btn) {
+    var r = btn.getBoundingClientRect(), x = r.left + r.width / 2, y = r.top + r.height / 2;
+    for (var i = 0; i < 6; i++) {
+      var h = document.createElement('span');
+      h.className = 'dt-heart';
+      h.textContent = '\u2665';
+      var a = (-90 + (i - 2.5) * 28) * Math.PI / 180, dist = 34 + Math.random() * 26;
+      h.style.left = x + 'px'; h.style.top = y + 'px';
+      h.style.fontSize = (11 + Math.random() * 7) + 'px';
+      h.style.setProperty('--dx', Math.cos(a) * dist + 'px');
+      h.style.setProperty('--dy', Math.sin(a) * dist + 'px');
+      document.body.appendChild(h);
+      setTimeout(function (el) { el.remove(); }.bind(null, h), 900);
     }
-    // gently steer back on screen when close to (or past) an edge
-    var m = 50, ex = Math.max(0, m - s.x, s.x - (W - m)), ey = Math.max(0, m - s.y, s.y - (H - m));
-    var edge = clamp(Math.max(ex, ey) / m, 0, 1);
-    if (edge > 0 && s.state !== 'seek') {
-      var toCenter = Math.atan2(H / 2 - s.y, W / 2 - s.x);
-      s.ang += wrap(toCenter - s.ang) * edge * dt * 3;
-    }
-    s.x += Math.cos(s.ang) * s.speed * dt;
-    s.y += Math.sin(s.ang) * s.speed * dt;
   }
 
-  function draw(t) {
-    ctx.clearRect(0, 0, W, H);
-    pts[0].x = s.x; pts[0].y = s.y;
-    for (var i = 1; i < N; i++) {
-      var a = pts[i - 1], b = pts[i], dx = b.x - a.x, dy = b.y - a.y, d = Math.hypot(dx, dy) || 0.0001, k = SEG / d;
-      b.x = a.x + dx * k; b.y = a.y + dy * k;
-    }
-    // slight slither sideways
-    var q = [];
-    for (var j = 0; j < N; j++) {
-      var p0 = pts[Math.max(j - 1, 0)], p1 = pts[Math.min(j + 1, N - 1)];
-      var tx = p0.x - p1.x, ty = p0.y - p1.y, tl = Math.hypot(tx, ty) || 1;
-      var off = Math.sin(t * 5 - j * 0.55) * 1.7 * Math.min(1, j / 6);
-      q.push({ x: pts[j].x - (ty / tl) * off, y: pts[j].y + (tx / tl) * off });
-    }
-    var dark = document.documentElement.classList.contains('ditemps-dark');
-    var rgb = dark ? '236,224,196' : '52,44,36', baseA = dark ? 0.7 : 0.6;
-    ctx.lineCap = 'butt'; ctx.lineJoin = 'round';
-    for (var n = N - 1; n >= 1; n--) {
-      var f = 1 - n / N;
-      var sx = n === N - 1 ? q[n].x : (q[n].x + q[n + 1].x) / 2, sy = n === N - 1 ? q[n].y : (q[n].y + q[n + 1].y) / 2;
-      var ex2 = (q[n].x + q[n - 1].x) / 2, ey2 = (q[n].y + q[n - 1].y) / 2;
-      ctx.beginPath(); ctx.moveTo(sx, sy); ctx.quadraticCurveTo(q[n].x, q[n].y, ex2, ey2);
-      ctx.strokeStyle = 'rgba(' + rgb + ',' + (baseA * (0.12 + 0.88 * Math.pow(f, 0.8))).toFixed(3) + ')';
-      ctx.lineWidth = 0.6 + f * 1.9;
-      ctx.stroke();
-    }
-    ctx.beginPath(); ctx.arc(q[0].x, q[0].y, 1.9, 0, TAU);
-    ctx.fillStyle = 'rgba(' + rgb + ',' + baseA + ')'; ctx.fill();
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest && e.target.closest('.card-like-btn, .detail-hero-heart, .detail-cta-heart, .wish-card-heart, #detailThumbLikeBtn');
+    if (!btn) return;
+    var before = btn.classList.contains('active');
+    setTimeout(function () {
+      if (!before && btn.classList.contains('active')) burst(btn);
+    }, 150);
+  });
+})();
+</script>
+<script id="ditemps-icons">
+/* Replaces every emoji in the UI with a clean line icon (also for content added later). */
+(function(){
+  var P={gift:'<rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M5 12v8a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-8M12 8c-1-3-5-4-5-1.5S10 8 12 8zM12 8c1-3 5-4 5-1.5S14 8 12 8z"/>',
+  heart:'<path d="M12 21s-7.5-4.6-9.5-9.1C1.2 8.6 3 5 6.5 5c2 0 3.5 1.1 5.5 3 2-1.9 3.5-3 5.5-3C21 5 22.8 8.6 21.5 11.9 19.5 16.4 12 21 12 21z"/>',
+  star:'<path d="M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1L3.2 9.5l6.1-.9z"/>',
+  flame:'<path d="M12 22c4 0 7-2.8 7-6.6 0-3-2-5-3.5-6.6-.4 1.5-1.2 2.4-2.2 2.9C13.6 8 12.5 5 10 3c0 3-2.5 5-4 7.2C5 11.7 5 13.2 5 15.4 5 19.2 8 22 12 22z"/>',
+  spark:'<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/>',
+  check:'<path d="M4 12.5l5 5L20 6.5"/>',lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+  camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',phone:'<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+  ticket:'<path d="M3 9V6h18v3a3 3 0 0 0 0 6v3H3v-3a3 3 0 0 0 0-6zM14 6v12"/>',mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+  book:'<path d="M4 4h6a3 3 0 0 1 2 1 3 3 0 0 1 2-1h6v15h-6a3 3 0 0 0-2 1 3 3 0 0 0-2-1H4z"/><path d="M12 5v15"/>',chat:'<path d="M4 5h16v11H9l-5 4z"/>',
+  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+  link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  palette:'<path d="M12 3a9 9 0 1 0 0 18c1.5 0 2-1 1.5-2s0-2.5 1.5-2.5H17a4 4 0 0 0 4-4C21 7 17 3 12 3z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/>',
+  bulb:'<path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.5 10.9c.6.5 1 1.2 1 2.1h5c0-.9.4-1.6 1-2.1A6 6 0 0 0 12 3z"/>',clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+  help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 1-1 1.7M12 17h.01"/>',clip:'<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4h6v3H9zM9 12h6M9 16h6"/>',
+  qr:'<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3M4 12h16"/>',circle:'<circle cx="12" cy="12" r="8"/>',
+  diamond:'<path d="M12 3l9 9-9 9-9-9z"/>',music:'<path d="M9 18V5l11-2v13"/><circle cx="6.5" cy="18" r="2.5"/><circle cx="17.5" cy="16" r="2.5"/>',
+  wallet:'<path d="M3 7h16a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2zM3 7l12-3v3M16 13.5h.01"/>',alert:'<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/>'};
+  var M={};function m(k,chars){chars.split(' ').forEach(function(c){M[c]=k;});}
+  m('gift','🎁 🎂 🎀');m('heart','❤ 💖 💗 💕 🧡 🤎 😘 🧸 🤝');m('star','⭐');m('flame','🔥');m('spark','✨ ✦ 🎉');m('check','✅ ✓');m('lock','🔒');
+  m('mail','💌 ✉');m('camera','📸 📷');m('phone','📱');m('ticket','🎟');m('book','📖');m('chat','💬');m('target','🎯');m('eye','🔭');m('link','🔗');
+  m('palette','🎨');m('bulb','💡');m('clock','🕓');m('help','❓');m('clip','📋');m('qr','🔳');m('circle','⚪');m('diamond','💠');m('music','🎵');m('wallet','💸');m('alert','⚠');
+  var re=new RegExp('('+Object.keys(M).join('|')+')\uFE0F?','g'), quick=new RegExp(Object.keys(M).join('|'));
+  var filled={heart:1,star:1,flame:1};
+  function icon(k){var s=document.createElementNS('http://www.w3.org/2000/svg','svg');s.setAttribute('viewBox','0 0 24 24');s.setAttribute('class','ic ic-'+k+(filled[k]?' f':''));s.setAttribute('aria-hidden','true');s.innerHTML=P[k];return s;}
+  function walk(root){
+    if(!root||root.nodeType===8)return;
+    if(root.nodeType===3){fix(root);return;}
+    if(root.nodeType!==1||/^(SCRIPT|STYLE|TEXTAREA|INPUT|OPTION|SVG|TITLE)$/i.test(root.tagName))return;
+    var w=document.createTreeWalker(root,4,{acceptNode:function(n){var t=n.parentNode&&n.parentNode.tagName;return(/^(SCRIPT|STYLE|TEXTAREA|OPTION|TITLE)$/i.test(t)||!quick.test(n.nodeValue))?2:1;}}),list=[],n;
+    while((n=w.nextNode()))list.push(n);list.forEach(fix);
   }
-
-  var last = 0, raf = 0;
-  function frame(ts) {
-    raf = requestAnimationFrame(frame);
-    var dt = Math.min(0.05, (ts - last) / 1000 || 0.016); last = ts;
-    update(dt, ts / 1000); draw(ts / 1000);
+  function fix(node){
+    var t=node.nodeValue;if(!t||!quick.test(t))return;
+    var f=document.createDocumentFragment(),last=0,x;re.lastIndex=0;
+    while((x=re.exec(t))){if(x.index>last)f.appendChild(document.createTextNode(t.slice(last,x.index)));f.appendChild(icon(M[x[1]]));last=re.lastIndex;}
+    if(last<t.length)f.appendChild(document.createTextNode(t.slice(last)));
+    if(node.parentNode)node.parentNode.replaceChild(f,node);
   }
-  function start() { if (!raf) { last = performance.now(); raf = requestAnimationFrame(frame); } }
-  function stop() { if (raf) { cancelAnimationFrame(raf); raf = 0; } }
-  document.addEventListener('visibilitychange', function () { document.hidden ? stop() : start(); });
-  start();
+  var q=[],sched=false;
+  new MutationObserver(function(ms){ms.forEach(function(r){r.addedNodes.forEach(function(n){q.push(n);});});
+    if(!sched&&q.length){sched=true;requestAnimationFrame(function(){var a=q;q=[];sched=false;a.forEach(walk);});}
+  }).observe(document.body,{childList:true,subtree:true});
+  walk(document.body);
 })();
 </script>
 </body>
