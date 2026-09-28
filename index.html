@@ -1410,20 +1410,24 @@
   /* Generate QR button under the link-result box */
   .qr-launch-btn { margin-top: 8px !important; background: rgba(255,255,255,0.1) !important; display: flex; align-items: center; justify-content: center; gap: 6px; }
 
-  /* QR Shape Picker + Preview Modal */
+  /* QR Style Picker + Preview Modal */
   .qr-shape-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 6px 0 4px; }
   .qr-shape-btn {
-    width: auto; margin-top: 0; padding: 14px 6px;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    width: auto; margin-top: 0; padding: 12px 4px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
     background: rgba(255,255,255,0.06) !important;
     border: 1px solid rgba(255,255,255,0.15) !important;
-    font-size: 11px; color: var(--text-muted);
+    font-size: 11px; font-weight: 600; color: var(--text-muted);
   }
-  .qr-shape-btn span.qr-shape-icon { font-size: 26px; }
-  .qr-shape-btn.selected { border-color: var(--accent-gold) !important; background: rgba(232,179,106,0.12) !important; color: #fff; }
+  .qr-shape-btn .qr-swatch {
+    display: block; width: 30px; height: 30px; border-radius: 9px;
+    border: 2px solid rgba(255,255,255,0.55);
+  }
+  .qr-shape-btn.selected { border-color: var(--accent-gold) !important; background: rgba(232,179,106,0.12) !important; color: #1a1a1a !important; }
+  .qr-shape-btn.selected .qr-swatch { border-color: rgba(0,0,0,0.25); }
   .qr-preview-wrap { display: none; text-align: center; margin-top: 14px; }
   .qr-preview-wrap.active { display: block; }
-  .qr-preview-wrap canvas { max-width: 100%; height: auto; border-radius: 12px; }
+  .qr-preview-wrap canvas { display: block; margin: 0 auto 10px; width: 100%; max-width: 340px; height: auto; border-radius: 12px; }
   .qr-back-btn { background: transparent !important; color: var(--text-muted) !important; }
   .spinner {
     display: inline-block;
@@ -4903,28 +4907,37 @@ html.ditemps-dark .social-btn .social-ico{border-color:#3a3d45}
     </div>
   </div>
 
-  <!-- QR Shape Picker + Preview Modal -->
+  <!-- QR Style Picker + Preview Modal -->
   <div class="modal-overlay" id="qrShapeModal">
     <div class="modal-box customize-box">
-      <h3>Choose a QR Shape</h3>
-      <p class="section-sub" style="text-align:center; margin-top:-8px;">QR khud simple square rahega, bas frame is shape ka banega.</p>
+      <h3>Choose a QR Style</h3>
+      <p class="section-sub" style="text-align:center; margin-top:-8px;">Link wahi rehta hai, bas QR ka design badalta hai. Har style scan hota hai.</p>
 
       <div class="qr-shape-grid">
+        <button type="button" class="qr-shape-btn" data-shape="cat" onclick="selectQrShape('cat')">
+          <span class="qr-swatch" style="background:linear-gradient(135deg,#fff 50%,#111 50%)"></span>Cat Peek
+        </button>
+        <button type="button" class="qr-shape-btn" data-shape="bow" onclick="selectQrShape('bow')">
+          <span class="qr-swatch" style="background:#E0287F"></span>Pink Bow
+        </button>
         <button type="button" class="qr-shape-btn" data-shape="heart" onclick="selectQrShape('heart')">
-          <span class="qr-shape-icon">❤️</span> Heart
+          <span class="qr-swatch" style="background:#E5233C"></span>Heart Dots
         </button>
-        <button type="button" class="qr-shape-btn" data-shape="circle" onclick="selectQrShape('circle')">
-          <span class="qr-shape-icon">⚪</span> Circle
+        <button type="button" class="qr-shape-btn" data-shape="gold" onclick="selectQrShape('gold')">
+          <span class="qr-swatch" style="background:linear-gradient(135deg,#E8B36A,#5C2450)"></span>Gold Circle
         </button>
-        <button type="button" class="qr-shape-btn" data-shape="square" onclick="selectQrShape('square')">
-          <span class="qr-shape-icon">⬛</span> Square
+        <button type="button" class="qr-shape-btn" data-shape="night" onclick="selectQrShape('night')">
+          <span class="qr-swatch" style="background:linear-gradient(135deg,#FF5FA2,#2A1160)"></span>Midnight
+        </button>
+        <button type="button" class="qr-shape-btn" data-shape="classic" onclick="selectQrShape('classic')">
+          <span class="qr-swatch" style="background:#fff"></span>Classic
         </button>
       </div>
 
       <div class="status-text" id="qrStatusText"></div>
 
       <div class="qr-preview-wrap" id="qrPreviewWrap">
-        <canvas id="qrPreviewCanvas" width="340" height="340"></canvas>
+        <canvas id="qrPreviewCanvas" width="720" height="720"></canvas>
         <button id="qrDownloadBtn" onclick="downloadGeneratedQr()">⬇️ Download QR</button>
       </div>
 
@@ -9245,23 +9258,31 @@ var qrcode = function() {
     }
 
     // ============================================================
-    // # QR CODE — SHAPE PICKER + GENERATOR #
-    // The QR data itself always stays a plain, scannable square (never
-    // clipped/warped into a shape — that would break scanning). What
-    // changes with the chosen shape is only the decorative OUTER FRAME
-    // drawn behind it (heart / circle / rounded square).
+    // # QR CODE — STYLE PICKER + GENERATOR #
+    // Every style draws the same scannable QR (dark modules on a light
+    // background, 1:1 square grid) and decorates AROUND it: frames,
+    // characters, the "Ditemps" name, etc. The canvas is 720x720 so the
+    // downloaded PNG stays sharp.
+    // To add a style: write a qrStyleXxx(ctx, qr, link) function and add it
+    // to QR_STYLE_FN + a button in #qrShapeModal (data-shape="xxx").
     // ============================================================
-    let lastQrCanvas = null; // holds the most-recently generated composite canvas, for download
+    let lastQrCanvas = null;   // most recent composite canvas, used for download
+    let lastQrStyle = 'cat';   // remembered between openings
+    let qrRenderToken = 0;     // ignores stale renders if the user taps quickly
+    const QR_W = 720;
+    const QR_SERIF = '"Fraunces", Georgia, serif';
+    const QR_SANS = '"Inter", Arial, sans-serif';
+    const QR_BRAND = 'Ditemps';   // ✏️ name printed on every QR
 
     function openQrShapeModal() {
       const link = document.getElementById('finalLinkInput').value;
       if (!link) return;
-      document.querySelectorAll('.qr-shape-btn').forEach(b => b.classList.remove('selected'));
       document.getElementById('qrPreviewWrap').classList.remove('active');
       document.getElementById('qrStatusText').textContent = '';
       lastQrCanvas = null;
       document.getElementById('qrShapeModal').classList.add('active');
       pushOverlay('qrshape', hideQrShapeModal);
+      selectQrShape(lastQrStyle); // show a preview straight away
     }
 
     function hideQrShapeModal() {
@@ -9272,40 +9293,77 @@ var qrcode = function() {
       requestCloseOverlay('qrshape', hideQrShapeModal);
     }
 
-    // Draws a rounded-rectangle path (used for the square frame + the white
-    // card that sits behind the QR itself).
-    function roundRectPath(ctx, x, y, w, h, r) {
-      ctx.moveTo(x + r, y);
-      ctx.arcTo(x + w, y, x + w, y + h, r);
-      ctx.arcTo(x + w, y + h, x, y + h, r);
-      ctx.arcTo(x, y + h, x, y, r);
-      ctx.arcTo(x, y, x + w, y, r);
+    // ---------- small drawing helpers ----------
+    // Rounded rect path; r is one radius or [tl, tr, br, bl].
+    function qrRRect(ctx, x, y, w, h, r) {
+      const a = Array.isArray(r) ? r : [r, r, r, r];
+      const tl = a[0], tr = a[1], br = a[2], bl = a[3];
+      ctx.moveTo(x + tl, y);
+      ctx.lineTo(x + w - tr, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + tr);
+      ctx.lineTo(x + w, y + h - br);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - br, y + h);
+      ctx.lineTo(x + bl, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - bl);
+      ctx.lineTo(x, y + tl);
+      ctx.quadraticCurveTo(x, y, x + tl, y);
       ctx.closePath();
     }
 
-    // Classic bezier heart path. (x, y) is the top-center of its bounding
-    // box; the shape spans `width` across and `height` down from there.
-    function heartPath(ctx, x, y, width, height) {
-      const topCurveHeight = height * 0.3;
-      ctx.moveTo(x, y + topCurveHeight);
-      ctx.bezierCurveTo(x, y, x - width / 2, y, x - width / 2, y + topCurveHeight);
-      ctx.bezierCurveTo(x - width / 2, y + (height + topCurveHeight) / 2, x, y + (height + topCurveHeight) / 2, x, y + height);
-      ctx.bezierCurveTo(x, y + (height + topCurveHeight) / 2, x + width / 2, y + (height + topCurveHeight) / 2, x + width / 2, y + topCurveHeight);
-      ctx.bezierCurveTo(x + width / 2, y, x, y, x, y + topCurveHeight);
-    }
-
-    function drawShapeFrame(ctx, shape, cx, cy, size) {
+    // Four-point sparkle
+    function qrSparkle(ctx, x, y, r, color) {
       ctx.beginPath();
-      if (shape === 'circle') {
-        ctx.arc(cx, cy, size / 2, 0, Math.PI * 2);
-      } else if (shape === 'heart') {
-        heartPath(ctx, cx, cy - size / 2, size, size);
-      } else {
-        roundRectPath(ctx, cx - size / 2, cy - size / 2, size, size, 26);
-      }
+      ctx.moveTo(x, y - r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.quadraticCurveTo(x, y, x, y + r);
+      ctx.quadraticCurveTo(x, y, x - r, y);
+      ctx.quadraticCurveTo(x, y, x, y - r);
       ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
     }
 
+    function qrPill(ctx, cx, cy, w, h, fill) {
+      ctx.beginPath();
+      qrRRect(ctx, cx - w / 2, cy - h / 2, w, h, h / 2);
+      ctx.fillStyle = fill;
+      ctx.fill();
+    }
+
+    // Text with optional manual letter-spacing (works in every browser).
+    function qrText(ctx, text, x, y, font, color, align, spacing) {
+      ctx.font = font;
+      ctx.fillStyle = color;
+      ctx.textBaseline = 'middle';
+      if (!spacing) {
+        ctx.textAlign = align || 'center';
+        ctx.fillText(text, x, y);
+        return;
+      }
+      ctx.textAlign = 'left';
+      const chars = Array.from(text);
+      const widths = chars.map(ch => ctx.measureText(ch).width);
+      const total = widths.reduce((s, w) => s + w, 0) + spacing * (chars.length - 1);
+      let px = align === 'left' ? x : align === 'right' ? x - total : x - total / 2;
+      chars.forEach((ch, i) => { ctx.fillText(ch, px, y); px += widths[i] + spacing; });
+    }
+
+    function qrHash(str) {
+      let h = 2166136261;
+      for (let i = 0; i < str.length; i += 1) { h ^= str.charCodeAt(i); h = Math.imul(h, 16777619); }
+      return h >>> 0;
+    }
+    // Seeded random so the same link always gives the same decoration.
+    function qrRng(seed) {
+      return function () {
+        seed |= 0; seed = (seed + 0x6D2B79F5) | 0;
+        let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
+        t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    // ---------- QR matrix ----------
     // Builds a `qrcode` object for `text`, auto-picking the smallest QR
     // version that fits (the embedded library doesn't auto-size on its own).
     function buildQrMatrix(text, ecLevel) {
@@ -9322,26 +9380,261 @@ var qrcode = function() {
       throw new Error('QR data too long to encode');
     }
 
-    // Draws a qrcode object's modules as plain black/white squares onto a
-    // canvas context, top-left corner at (x, y), spanning exactly `size`px.
-    function drawQrMatrix(ctx, qr, x, y, size) {
-      const count = qr.getModuleCount();
-      const cell = size / count;
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(x, y, size, size);
-      ctx.fillStyle = '#0B0A17';
-      for (let r = 0; r < count; r += 1) {
-        for (let c = 0; c < count; c += 1) {
-          if (qr.isDark(r, c)) {
-            // Math.ceil on width/height avoids thin white hairlines between
-            // cells from sub-pixel rounding.
-            ctx.fillRect(x + c * cell, y + r * cell, Math.ceil(cell) + 0.5, Math.ceil(cell) + 0.5);
+    function qrIsFinder(r, c, n) {
+      return (r < 7 && c < 7) || (r < 7 && c >= n - 7) || (r >= n - 7 && c < 7);
+    }
+
+    // Draws modules from a dark(r,c) function on a rows x cols grid.
+    // mode: 'liquid' (neighbouring modules melt together), 'dot', 'square'.
+    function qrDrawModules(ctx, dark, rows, cols, x, y, cell, color, mode, skip) {
+      const on = (r, c) => r >= 0 && c >= 0 && r < rows && c < cols && dark(r, c) && !(skip && skip(r, c));
+      ctx.fillStyle = color;
+      for (let r = 0; r < rows; r += 1) {
+        for (let c = 0; c < cols; c += 1) {
+          if (!on(r, c)) continue;
+          const px = x + c * cell, py = y + r * cell, w = cell + 0.6; // +0.6 hides hairlines
+          ctx.beginPath();
+          if (mode === 'dot') {
+            ctx.arc(px + cell / 2, py + cell / 2, cell * 0.47, 0, Math.PI * 2);
+          } else if (mode === 'square') {
+            ctx.rect(px, py, w, w);
+          } else {
+            const R = cell * 0.5;
+            const u = on(r - 1, c), d = on(r + 1, c), l = on(r, c - 1), rt = on(r, c + 1);
+            qrRRect(ctx, px, py, w, w, [!u && !l ? R : 0, !u && !rt ? R : 0, !d && !rt ? R : 0, !d && !l ? R : 0]);
           }
+          ctx.fill();
         }
       }
     }
 
-    function selectQrShape(shape) {
+    // The three corner "eyes". round = 1 for soft corners, 0 for sharp.
+    function qrDrawFinders(ctx, n, x, y, cell, color, bg, round) {
+      const k = round === 0 ? 0 : 0.5; // half-rounded: pretty but still reliably scannable (fully round eyes break some scanners)
+      [[0, 0], [0, n - 7], [n - 7, 0]].forEach(function (p) {
+        const px = x + p[1] * cell, py = y + p[0] * cell;
+        ctx.fillStyle = color; ctx.beginPath(); qrRRect(ctx, px, py, 7 * cell, 7 * cell, cell * 2.2 * k); ctx.fill();
+        ctx.fillStyle = bg;    ctx.beginPath(); qrRRect(ctx, px + cell, py + cell, 5 * cell, 5 * cell, cell * 1.5 * k); ctx.fill();
+        ctx.fillStyle = color; ctx.beginPath(); qrRRect(ctx, px + 2 * cell, py + 2 * cell, 3 * cell, 3 * cell, cell * 1.1 * k); ctx.fill();
+      });
+    }
+
+    // Standard QR block: fills nothing behind it (caller paints the card),
+    // draws modules + eyes at (x, y) spanning `size` px.
+    function qrDrawCode(ctx, qr, x, y, size, color, bg, mode) {
+      const n = qr.getModuleCount(), cell = size / n;
+      qrDrawModules(ctx, (r, c) => qr.isDark(r, c), n, n, x, y, cell, color, mode,
+        (r, c) => qrIsFinder(r, c, n));
+      qrDrawFinders(ctx, n, x, y, cell, color, bg, mode === 'square' ? 0 : 1);
+    }
+
+    // ---------- STYLE 1: Cat Peek (black & white sticker) ----------
+    function qrStyleCat(ctx, qr) {
+      const W = QR_W, hx = 360, hy = 168;
+      ctx.fillStyle = '#F7F6F1'; ctx.fillRect(0, 0, W, W);
+      ctx.strokeStyle = 'rgba(0,0,0,0.07)'; ctx.lineWidth = 1;
+      for (let i = 0; i <= W; i += 36) {
+        ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, W); ctx.moveTo(0, i); ctx.lineTo(W, i); ctx.stroke();
+      }
+      // wavy black side shapes
+      ctx.fillStyle = '#111';
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(120, 0);
+      ctx.bezierCurveTo(150, 120, 60, 190, 95, 300);
+      ctx.bezierCurveTo(130, 410, 60, 480, 110, 570);
+      ctx.bezierCurveTo(140, 630, 100, 690, 120, 720);
+      ctx.lineTo(0, 720); ctx.closePath(); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(720, 330);
+      ctx.bezierCurveTo(690, 340, 660, 400, 675, 470);
+      ctx.bezierCurveTo(690, 540, 650, 600, 720, 640);
+      ctx.closePath(); ctx.fill();
+      qrSparkle(ctx, 55, 62, 24, '#fff'); qrSparkle(ctx, 30, 225, 12, '#fff'); qrSparkle(ctx, 62, 655, 20, '#fff');
+      qrSparkle(ctx, 190, 112, 34, '#111'); qrSparkle(ctx, 632, 650, 28, '#111');
+
+      // cat head (sits behind the card)
+      ctx.lineWidth = 5; ctx.strokeStyle = '#111'; ctx.fillStyle = '#fff'; ctx.lineJoin = 'round';
+      [-1, 1].forEach(function (s) {
+        ctx.beginPath(); ctx.moveTo(hx + s * 98, hy - 14); ctx.lineTo(hx + s * 80, hy - 92); ctx.lineTo(hx + s * 30, hy - 58);
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+      });
+      ctx.beginPath(); ctx.ellipse(hx, hy, 108, 74, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(hx - 4, hy - 72); ctx.lineTo(hx - 10, hy - 94); ctx.moveTo(hx + 6, hy - 72); ctx.lineTo(hx + 8, hy - 92); ctx.stroke();
+      [-45, 45].forEach(function (dx) {
+        ctx.fillStyle = '#111'; ctx.beginPath(); ctx.arc(hx + dx, hy + 2, 19, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(hx + dx - 6, hy - 4, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(hx + dx + 6, hy + 8, 3, 0, Math.PI * 2); ctx.fill();
+      });
+      ctx.lineWidth = 3.5; ctx.beginPath(); ctx.ellipse(hx, hy + 34, 7, 9, 0, 0, Math.PI * 2); ctx.stroke();
+
+      // card
+      ctx.fillStyle = 'rgba(0,0,0,0.22)'; ctx.beginPath(); qrRRect(ctx, 156, 218, 420, 420, 64); ctx.fill();
+      ctx.beginPath(); qrRRect(ctx, 150, 210, 420, 420, 64);
+      ctx.fillStyle = '#FBFAF6'; ctx.fill(); ctx.lineWidth = 10; ctx.strokeStyle = '#111'; ctx.stroke();
+      qrDrawCode(ctx, qr, 190, 250, 340, '#111', '#FBFAF6', 'liquid');
+
+      // paws over the card edge
+      ctx.lineWidth = 5; ctx.fillStyle = '#fff'; ctx.strokeStyle = '#111';
+      [-92, 92].forEach(function (dx) {
+        ctx.beginPath(); ctx.ellipse(hx + dx, 212, 34, 22, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(hx + dx - 8, 204); ctx.lineTo(hx + dx - 8, 214); ctx.moveTo(hx + dx + 8, 204); ctx.lineTo(hx + dx + 8, 214); ctx.stroke();
+        ctx.lineWidth = 5;
+      });
+
+      // headline + brand pill
+      qrText(ctx, 'Scan', 637 + 3, 90 + 3, '700 62px ' + QR_SERIF, '#9a9a9a');
+      qrText(ctx, 'Scan', 637, 90, '700 62px ' + QR_SERIF, '#111');
+      qrText(ctx, 'Me!!', 637 + 3, 156 + 3, '700 62px ' + QR_SERIF, '#9a9a9a');
+      qrText(ctx, 'Me!!', 637, 156, '700 62px ' + QR_SERIF, '#111');
+      qrPill(ctx, 360, 676, 250, 52, '#111');
+      qrText(ctx, QR_BRAND, 360, 677, 'italic 500 28px ' + QR_SERIF, '#fff');
+      qrSparkle(ctx, 222, 676, 10, '#111'); qrSparkle(ctx, 498, 676, 10, '#111');
+    }
+
+    // ---------- STYLE 2: Pink Bow ----------
+    function qrBow(ctx, cx, cy, sc) {
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(sc, sc);
+      const g = ctx.createLinearGradient(-90, -60, 90, 60);
+      g.addColorStop(0, '#FFD6E0'); g.addColorStop(1, '#F493AF');
+      ctx.fillStyle = g; ctx.strokeStyle = '#EE86A5'; ctx.lineWidth = 3; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo(-6, 6); ctx.bezierCurveTo(-40, 55, -70, 110, -64, 175); ctx.lineTo(-40, 158); ctx.lineTo(-30, 190);
+      ctx.bezierCurveTo(-20, 120, -6, 70, 6, 10); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(4, 6); ctx.bezierCurveTo(30, 60, 55, 105, 80, 150); ctx.lineTo(52, 152); ctx.lineTo(58, 185);
+      ctx.bezierCurveTo(30, 150, 0, 90, -8, 10); ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(-30, -50, -100, -70, -118, -30); ctx.bezierCurveTo(-130, 10, -60, 35, 0, 0);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(0, 0); ctx.bezierCurveTo(30, -50, 100, -70, 118, -30); ctx.bezierCurveTo(130, 10, 60, 35, 0, 0);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#F27A9C'; ctx.beginPath(); ctx.ellipse(0, 2, 18, 22, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
+
+    function qrStyleBow(ctx, qr) {
+      const PINK = '#E0287F', SOFT = '#FFEDF2';
+      ctx.fillStyle = SOFT; ctx.fillRect(0, 0, QR_W, QR_W);
+      // corner brackets
+      const L = 140, R = 580, T = 215, B = 655, rad = 48, len = 150;
+      ctx.strokeStyle = PINK; ctx.lineWidth = 26; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(L, T + len); ctx.lineTo(L, T + rad); ctx.quadraticCurveTo(L, T, L + rad, T); ctx.lineTo(L + len, T);
+      ctx.moveTo(R - len, T); ctx.lineTo(R - rad, T); ctx.quadraticCurveTo(R, T, R, T + rad); ctx.lineTo(R, T + len);
+      ctx.moveTo(L, B - len); ctx.lineTo(L, B - rad); ctx.quadraticCurveTo(L, B, L + rad, B); ctx.lineTo(L + len, B);
+      ctx.moveTo(R - len, B); ctx.lineTo(R - rad, B); ctx.quadraticCurveTo(R, B, R, B - rad); ctx.lineTo(R, B - len);
+      ctx.stroke();
+      ctx.lineCap = 'butt';
+      // speech bubble
+      ctx.fillStyle = PINK; ctx.beginPath(); qrRRect(ctx, 150, 75, 420, 100, 34); ctx.fill();
+      ctx.beginPath(); ctx.moveTo(335, 172); ctx.lineTo(360, 208); ctx.lineTo(385, 172); ctx.closePath(); ctx.fill();
+      qrText(ctx, 'SCAN ME', 360, 127, '700 62px ' + QR_SANS, '#fff', 'center', 3);
+      qrBow(ctx, 102, 104, 0.8);
+      qrDrawCode(ctx, qr, 190, 255, 340, PINK, SOFT, 'liquid');
+      qrText(ctx, QR_BRAND.toUpperCase(), 360, 694, '500 26px ' + QR_SANS, '#3a3a3a', 'center', 9);
+    }
+
+    // ---------- STYLE 3: Heart Dots (modules melt into a heart) ----------
+    function qrStyleHeart(ctx, qr, link) {
+      const W = QR_W, RED = '#E5233C';
+      ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, W);
+      const heart = new Path2D();
+      heart.moveTo(360, 690);
+      heart.bezierCurveTo(190, 560, 30, 450, 30, 270);
+      heart.bezierCurveTo(30, 150, 120, 70, 220, 70);
+      heart.bezierCurveTo(290, 70, 340, 110, 360, 170);
+      heart.bezierCurveTo(380, 110, 430, 70, 500, 70);
+      heart.bezierCurveTo(600, 70, 690, 150, 690, 270);
+      heart.bezierCurveTo(690, 450, 530, 560, 360, 690);
+      heart.closePath();
+
+      const n = qr.getModuleCount(), S = 330, cell = S / n;
+      const qx = (W - S) / 2, qy = 200;
+      const ox = qx - Math.ceil(qx / cell) * cell, oy = qy - Math.ceil(qy / cell) * cell;
+      const cols = Math.ceil((W - ox) / cell), rows = Math.ceil((W - oy) / cell);
+      const r0 = Math.round((qy - oy) / cell), c0 = Math.round((qx - ox) / cell);
+      const rnd = qrRng(qrHash(link));
+      const quiet = 2; // empty modules kept around the real QR so it stays scannable
+      const grid = new Array(rows * cols);
+      for (let r = 0; r < rows; r += 1) {
+        for (let c = 0; c < cols; c += 1) {
+          let v = false;
+          if (r >= r0 && r < r0 + n && c >= c0 && c < c0 + n) {
+            v = qr.isDark(r - r0, c - c0);
+          } else {
+            const nearQr = r >= r0 - quiet && r < r0 + n + quiet && c >= c0 - quiet && c < c0 + n + quiet;
+            const px = ox + (c + 0.5) * cell, py = oy + (r + 0.5) * cell;
+            const nearName = px > 270 - cell && px < 450 + cell && py > 568 - cell && py < 612 + cell;
+            if (!nearQr && !nearName && ctx.isPointInPath(heart, px, py)) v = rnd() < 0.5;
+          }
+          grid[r * cols + c] = v;
+        }
+      }
+      qrDrawModules(ctx, (r, c) => grid[r * cols + c], rows, cols, ox, oy, cell, RED, 'liquid',
+        (r, c) => r >= r0 && r < r0 + n && c >= c0 && c < c0 + n && qrIsFinder(r - r0, c - c0, n));
+      qrDrawFinders(ctx, n, qx, qy, cell, RED, '#fff', 1);
+      qrPill(ctx, 360, 590, 180, 44, RED);
+      qrText(ctx, QR_BRAND, 360, 591, 'italic 500 26px ' + QR_SERIF, '#fff');
+    }
+
+    // ---------- STYLE 4: Gold Circle (Ditemps brand gradient) ----------
+    function qrStyleGold(ctx, qr) {
+      ctx.fillStyle = '#FFF7EE'; ctx.fillRect(0, 0, QR_W, QR_W);
+      const g = ctx.createLinearGradient(40, 40, 680, 680);
+      g.addColorStop(0, '#E8B36A'); g.addColorStop(1, '#5C2450');
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(360, 360, 340, 0, Math.PI * 2); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.35)'; ctx.lineWidth = 4;
+      ctx.beginPath(); ctx.arc(360, 360, 322, 0, Math.PI * 2); ctx.stroke();
+      ctx.beginPath(); qrRRect(ctx, 170, 195, 380, 380, 44); ctx.fillStyle = '#fff'; ctx.fill();
+      qrDrawCode(ctx, qr, 205, 230, 310, '#2B0F33', '#fff', 'dot');
+      qrText(ctx, 'Scan me', 360, 128, 'italic 500 40px ' + QR_SERIF, '#fff');
+      qrSparkle(ctx, 240, 128, 11, '#fff'); qrSparkle(ctx, 480, 128, 11, '#fff');
+      qrText(ctx, QR_BRAND, 360, 632, '700 56px ' + QR_SERIF, '#fff');
+    }
+
+    // ---------- STYLE 5: Midnight (neon on dark) ----------
+    function qrStyleNight(ctx, qr, link) {
+      const bg = ctx.createLinearGradient(0, 0, 0, QR_W);
+      bg.addColorStop(0, '#120B2E'); bg.addColorStop(1, '#3A1466');
+      ctx.fillStyle = bg; ctx.fillRect(0, 0, QR_W, QR_W);
+      const rnd = qrRng(qrHash(link) ^ 77);
+      for (let i = 0; i < 16; i += 1) {
+        const x = rnd() * QR_W, y = rnd() * QR_W;
+        if (x > 100 && x < 620 && y > 130 && y < 650) continue; // keep the middle clean
+        if (x > 190 && x < 530 && y < 130) continue;           // and the title
+        if (x > 190 && x < 530 && y < 130) continue;           // and the title
+        ctx.globalAlpha = 0.35 + rnd() * 0.5;
+        qrSparkle(ctx, x, y, 5 + rnd() * 9, '#fff');
+      }
+      ctx.globalAlpha = 1;
+      const neon = ctx.createLinearGradient(120, 150, 600, 630);
+      neon.addColorStop(0, '#FF5FA2'); neon.addColorStop(1, '#7C5CFF');
+      ctx.save();
+      ctx.shadowColor = '#FF5FA2'; ctx.shadowBlur = 26;
+      ctx.strokeStyle = neon; ctx.lineWidth = 10; ctx.beginPath(); qrRRect(ctx, 120, 150, 480, 480, 70); ctx.stroke();
+      qrText(ctx, 'Scan me', 360, 85, '700 62px ' + QR_SERIF, '#fff');
+      ctx.restore();
+      ctx.beginPath(); qrRRect(ctx, 150, 180, 420, 420, 48); ctx.fillStyle = '#fff'; ctx.fill();
+      qrDrawCode(ctx, qr, 190, 220, 340, '#1A0F3D', '#fff', 'dot');
+      qrText(ctx, QR_BRAND, 360, 676, 'italic 500 46px ' + QR_SERIF, '#FFD9A8');
+    }
+
+    // ---------- STYLE 6: Classic (clean, sharp corners) ----------
+    function qrStyleClassic(ctx, qr) {
+      ctx.fillStyle = '#FBF7F1'; ctx.fillRect(0, 0, QR_W, QR_W);
+      const g = ctx.createLinearGradient(60, 60, 660, 660);
+      g.addColorStop(0, '#E8B36A'); g.addColorStop(1, '#5C2450');
+      ctx.beginPath(); qrRRect(ctx, 60, 60, 600, 600, 64); ctx.fillStyle = '#fff'; ctx.fill();
+      ctx.lineWidth = 12; ctx.strokeStyle = g; ctx.stroke();
+      qrText(ctx, 'Scan to open your surprise', 360, 122, 'italic 500 32px ' + QR_SERIF, '#3A1A3A');
+      qrDrawCode(ctx, qr, 170, 170, 380, '#111', '#fff', 'square');
+      qrPill(ctx, 360, 612, 220, 54, '#2B0F33');
+      qrText(ctx, QR_BRAND, 360, 613, 'italic 500 30px ' + QR_SERIF, '#fff');
+    }
+
+    const QR_STYLE_FN = {
+      cat: qrStyleCat, bow: qrStyleBow, heart: qrStyleHeart,
+      gold: qrStyleGold, night: qrStyleNight, classic: qrStyleClassic
+    };
+
+    async function selectQrShape(shape) {
+      if (!QR_STYLE_FN[shape]) shape = 'cat';
+      lastQrStyle = shape;
       document.querySelectorAll('.qr-shape-btn').forEach(b => {
         b.classList.toggle('selected', b.dataset.shape === shape);
       });
@@ -9350,41 +9643,28 @@ var qrcode = function() {
       const link = document.getElementById('finalLinkInput').value;
       if (!link) return;
 
+      const token = ++qrRenderToken;
       statusText.textContent = 'Generating QR...';
 
       try {
+        // make sure the site fonts are ready before drawing text on the canvas
+        try {
+          await Promise.all([
+            document.fonts.load('700 40px Fraunces'),
+            document.fonts.load('italic 500 40px Fraunces'),
+            document.fonts.load('700 40px Inter'),
+            document.fonts.load('500 26px Inter')
+          ]);
+        } catch (e) { /* fall back to system fonts */ }
+        if (token !== qrRenderToken) return; // a newer tap took over
+
         const canvas = document.getElementById('qrPreviewCanvas');
-        const outSize = canvas.width; // 340, set in HTML
         const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, outSize, outSize);
-
-        const cx = outSize / 2;
-        const cy = outSize / 2;
-        const frameSize = 300;
-
-        // Outer decorative frame, filled with the site's gold-to-pink brand gradient
-        const grad = ctx.createLinearGradient(0, 0, outSize, outSize);
-        grad.addColorStop(0, '#E8B36A');
-        grad.addColorStop(1, '#5C2450');
-        drawShapeFrame(ctx, shape, cx, cy, frameSize);
-        ctx.fillStyle = grad;
-        ctx.fill();
-
-        // The heart's visual "belly" sits a little below its own bounding-box
-        // center, so nudge the white card + QR down slightly only for that shape.
-        const vShift = shape === 'heart' ? 14 : 0;
-
-        // White card behind the QR (keeps the QR itself a plain readable square)
-        const cardSize = 212;
-        ctx.beginPath();
-        roundRectPath(ctx, cx - cardSize / 2, cy - cardSize / 2 + vShift, cardSize, cardSize, 16);
-        ctx.fillStyle = '#ffffff';
-        ctx.fill();
-
-        // Generate the actual QR (locally, no network needed) and stamp it in
-        const qrSize = cardSize - 28;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
         const qr = buildQrMatrix(link, 'M');
-        drawQrMatrix(ctx, qr, cx - qrSize / 2, cy - qrSize / 2 + vShift, qrSize);
+        ctx.save();
+        QR_STYLE_FN[shape](ctx, qr, link);
+        ctx.restore();
 
         lastQrCanvas = canvas;
         document.getElementById('qrPreviewWrap').classList.add('active');
@@ -9398,7 +9678,7 @@ var qrcode = function() {
     function downloadGeneratedQr() {
       if (!lastQrCanvas) return;
       const a = document.createElement('a');
-      a.download = 'sorav-temps-qr.png';
+      a.download = 'ditemps-qr-' + lastQrStyle + '.png';
       a.href = lastQrCanvas.toDataURL('image/png');
       a.click();
     }
