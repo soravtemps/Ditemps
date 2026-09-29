@@ -4294,6 +4294,32 @@ html.ditemps-dark .social-promo p,html.ditemps-dark .social-btn{color:#a9abb2}
 @media(hover:hover){.social-btn:hover .social-ico{box-shadow:0 6px 16px rgba(20,10,30,.18)}}
 html.ditemps-dark .social-btn .social-ico{border-color:#3a3d45}
 </style>
+<style id="ditemps-compact-cards">
+/* Compact template cards (alwaysyou.in style): no tags, tight spacing */
+.template-card .card-info{padding:10px 12px 12px !important;gap:2px !important;justify-content:flex-start !important;flex-grow:0 !important}
+.template-card .card-title-row{display:flex;align-items:center;justify-content:space-between;gap:6px}
+.template-card .card-info h3{flex:1;min-width:0;height:auto !important;min-height:0 !important;max-height:none !important;line-height:1.3 !important;font-size:14px !important;white-space:nowrap !important;display:block !important;overflow:hidden !important;text-overflow:ellipsis !important}
+.template-card .card-rating{font-size:11px;font-weight:700;color:#D89A16;white-space:nowrap}
+.template-card .card-info > p{height:auto !important;min-height:0 !important;max-height:none !important;line-height:1.3 !important;font-size:11px !important;margin:0 !important}
+.template-card .card-footer{display:flex !important;flex-direction:row !important;align-items:center !important;justify-content:space-between !important;border-top:none !important;padding-top:6px !important;gap:8px}
+.template-card .card-footer .price{display:flex;align-items:baseline;font-size:18px !important;line-height:1.2;font-weight:800}
+.template-card .card-footer .strike-price{font-size:12px !important;margin-left:4px;margin-right:0;order:2}
+.template-card .off-text{font-size:12px;font-weight:700;color:#E8912D;margin-top:1px}
+.template-card .badge-row,.template-card .card-metrics{display:none !important}
+.template-card .tag-row{display:flex;gap:5px;align-items:center;margin-bottom:3px;flex-wrap:nowrap;overflow:hidden}
+.template-card .cat-tag{font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase;padding:3px 9px;border-radius:999px;background:#f3f1f2;color:#555;white-space:nowrap}
+.template-card .trend-tag{font-size:10px;font-weight:700;padding:3px 8px;border-radius:999px;background:#fff1e6;color:#E8722D;white-space:nowrap}
+.template-card .price-col{display:flex;flex-direction:column;min-width:0}
+.template-card .view-btn{display:inline-flex !important;align-items:center;justify-content:center;background:#171717 !important;color:#fff !important;border:none !important;border-radius:999px !important;padding:8px 16px !important;font-size:12px !important;font-weight:700;cursor:pointer;flex:none}
+.template-card{position:relative}
+.template-card .card-footer{position:static !important;min-height:44px;align-items:flex-end !important}
+.template-card .price-col{flex:1;min-width:0;padding-right:62px}
+.template-card .card-footer .price{flex-wrap:wrap;font-size:17px !important;column-gap:5px}
+.template-card .card-footer .strike-price{margin-left:0 !important}
+.template-card .view-btn{position:absolute !important;right:10px;bottom:10px;padding:7px 14px !important}
+#openLinkBtn{background:#171717 !important;color:#fff !important;border:none !important;padding:12px 16px !important;font-size:14px;font-weight:700}
+.gift-card-actions button.edit-btn{background:#fff4e0;color:#b56a00;border-color:#f3d9a8}
+</style>
 </head>
 <body>
 
@@ -7307,6 +7333,33 @@ var qrcode = function() {
       renderAllGrid();
     }
 
+    // Search: every word in the query is checked against name, description,
+    // category and tags (with short-forms like bday/anni). A template shows
+    // up if ANY word matches; the more words match, the higher it ranks.
+    const SEARCH_ALIASES = {
+      bday: 'birthday', bdy: 'birthday', "b'day": 'birthday', birth: 'birthday',
+      anni: 'anniversary', anniv: 'anniversary', rakhi: 'rakshabandhan', raksha: 'rakshabandhan',
+      gf: 'girlfriend', bf: 'boyfriend', wish: 'wishes', surprise: 'surprise', love: 'love',
+      shaadi: 'marriage', wedding: 'marriage', vday: 'valentine', friend: 'friendship', bff: 'friendship'
+    };
+    function templateSearchScore(item, query) {
+      const extra = [].concat(item.tags || [], item.keywords || []).join(' ');
+      const hay = [item.name, item.desc, item.category, extra].filter(Boolean).join(' ').toLowerCase();
+      const words = query.toLowerCase().split(/[\s,;]+/).filter(Boolean);
+      let score = 0;
+      words.forEach(w => {
+        const variants = [w];
+        if (SEARCH_ALIASES[w]) variants.push(SEARCH_ALIASES[w]);
+        if (w.length > 3 && w.endsWith('s')) variants.push(w.slice(0, -1));
+        if (variants.some(v => hay.includes(v))) {
+          score += 1;
+          if (String(item.name || '').toLowerCase().includes(w)) score += 0.5;
+          if (String(item.category || '').toLowerCase().includes(w)) score += 0.3;
+        }
+      });
+      return score;
+    }
+
     function renderAllGrid() {
       const combined = getAllTemplatesCombined();
 
@@ -7321,12 +7374,10 @@ var qrcode = function() {
         if (!matchesType) return false;
 
         if (!allSearchQuery) return true;
-        const haystack = [entry.item.name, entry.item.desc, entry.item.category]
-          .filter(Boolean)
-          .join(' ')
-          .toLowerCase();
-        return haystack.includes(allSearchQuery);
+        entry._score = templateSearchScore(entry.item, allSearchQuery);
+        return entry._score > 0;
       });
+      if (allSearchQuery) filtered.sort((a, b) => (b._score || 0) - (a._score || 0));
 
       buildMixedGrid('all-grid', filtered);
     }
@@ -7401,21 +7452,11 @@ var qrcode = function() {
         card.innerHTML = `
           <div class="card-image-box">${item.image ? `<img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async">` : (item.emoji || '🎁')}<button class="card-like-btn${cardIsWished ? ' active' : ''}" type="button" data-template-name="${escapeHtml(item.name)}" title="Add to wishlist" aria-label="Add to wishlist">${cardIsWished ? '♥' : '♡'}</button></div>
           <div class="card-info">
-            <div class="badge-row">
-              <span class="badge ${badgeClass}">${badgeText}</span>
-              <span class="badge cat">${item.category}</span>
-              ${getOfferBadgeHtml(item, kind)}
-            </div>
-            <h3>${item.name}</h3>
+            <div class="tag-row"><span class="cat-tag">${item.category}</span>${isTrending(item) ? '<span class="trend-tag">🔥 Trending</span>' : ''}</div>
+            <div class="card-title-row"><h3>${item.name}</h3><span class="card-rating">★ ${getCombinedStats(item).rating.toFixed(1)}</span></div>
             <p>${item.desc || ''}</p>
-            <div class="card-metrics">
-              <span class="card-metric rating">★ ${getCombinedStats(item).rating.toFixed(1)}</span>
-              <span class="card-metric" data-template-stat-name="${escapeHtml(item.name)}" data-template-stat-type="likes">♡ ${formatMetric(getCombinedStats(item).likes)}</span>
-              <span class="card-metric" data-template-stat-name="${escapeHtml(item.name)}" data-template-stat-type="views">◉ ${formatMetric(getCombinedStats(item).views)}</span>
-              ${isTrending(item) ? '<span class="card-metric trending-badge">🔥 Trending</span>' : ''}
-            </div>
             <div class="card-footer">
-              <span class="price">${priceLabel}</span>
+              <div class="price-col"><span class="price">${priceLabel}</span>${getOfferTextHtml(item, kind)}</div>
               <button class="view-btn">View</button>
             </div>
           </div>
@@ -7653,6 +7694,14 @@ var qrcode = function() {
       return '';
     }
 
+    function getOfferTextHtml(item, kind) {
+      if ((kind === 'paid' || kind === 'premium') && isOfferItem(item)) {
+        const { percent } = getOfferPricing(item);
+        return `<span class="off-text">${percent}% off</span>`;
+      }
+      return '';
+    }
+
     // ---------- GRID RENDERING ----------
 
     function buildGrid(gridId, data, kind) {
@@ -7676,15 +7725,11 @@ var qrcode = function() {
         card.innerHTML = `
           <div class="card-image-box">${item.image ? `<img src="${item.image}" alt="${item.name}" loading="lazy" decoding="async">` : (item.emoji || '🎁')}<button class="card-like-btn${cardIsWished ? ' active' : ''}" type="button" data-template-name="${escapeHtml(item.name)}" title="Add to wishlist" aria-label="Add to wishlist">${cardIsWished ? '♥' : '♡'}</button></div>
           <div class="card-info">
-            <div class="badge-row">
-              <span class="badge ${badgeClass}">${badgeText}</span>
-              <span class="badge cat">${item.category}</span>
-              ${getOfferBadgeHtml(item, kind)}
-            </div>
-            <h3>${item.name}</h3>
+            <div class="tag-row"><span class="cat-tag">${item.category}</span>${isTrending(item) ? '<span class="trend-tag">🔥 Trending</span>' : ''}</div>
+            <div class="card-title-row"><h3>${item.name}</h3><span class="card-rating">★ ${getCombinedStats(item).rating.toFixed(1)}</span></div>
             <p>${item.desc || ''}</p>
             <div class="card-footer">
-              <span class="price">${priceLabel}</span>
+              <div class="price-col"><span class="price">${priceLabel}</span>${getOfferTextHtml(item, kind)}</div>
               <button class="view-btn">View</button>
             </div>
           </div>
@@ -8271,6 +8316,7 @@ var qrcode = function() {
 
       document.getElementById('customizeTitle').textContent = 'Customize: ' + item.name;
       document.getElementById('generateBtn').style.display = '';
+      document.getElementById('generateBtn').textContent = window.editingGift ? 'Save Changes' : 'Generate Link';
       document.getElementById('statusText').textContent = '';
       document.getElementById('linkResult').classList.remove('active');
 
@@ -8302,6 +8348,7 @@ var qrcode = function() {
     }
 
     function hideCustomizeModal() {
+      window.editingGift = null;
       document.getElementById('customizeModal').classList.remove('active');
       stopMusicPreview();
       currentTemplate = null;
@@ -9193,7 +9240,8 @@ var qrcode = function() {
           const cardId = await window.saveCardData({
             templateName: currentTemplate.name,
             values,
-            photoGroups
+            photoGroups,
+            editCardId: window.editingGift ? window.editingGift.cardId : ''
           });
           link = `${currentTemplate.downloadUrl}?id=${cardId}`;
         } else {
@@ -9203,19 +9251,21 @@ var qrcode = function() {
         document.getElementById('finalLinkInput').value = link;
         document.getElementById('openLinkBtn').href = link;
         document.getElementById('linkResult').classList.add('active');
-        statusText.textContent = 'Your link is ready!';
+        statusText.textContent = window.editingGift ? 'Changes saved! Same link, updated.' : 'Your link is ready!';
+        if (window.editingGift && typeof loadAccountOrders === 'function') loadAccountOrders();
 
         const generatedTemplateName = currentTemplate ? currentTemplate.name : '';
 
         // Save this exact personalized link so "My Gifts" can show which
         // template was made and open/share/QR the REAL link — not just the
         // template's generic URL.
-        if (window.currentUserUid && generatedTemplateName) {
+        if (window.currentUserUid && generatedTemplateName && !window.editingGift) {
           try {
             await addDoc(collection(db, 'myGifts'), {
               uid: window.currentUserUid,
               templateName: generatedTemplateName,
               link,
+              cardId: (link.split('?id=')[1] || ''),
               createdAt: serverTimestamp()
             });
             if (typeof loadAccountOrders === 'function') loadAccountOrders();
@@ -9229,7 +9279,7 @@ var qrcode = function() {
         // second link. Free templates, admin access, and an active Premium
         // subscription never get added to walletUnlockedTemplateNames, so
         // they're unaffected by this.
-        if (generatedTemplateName && window.walletUnlockedTemplateNames instanceof Set && window.walletUnlockedTemplateNames.has(generatedTemplateName)) {
+        if (!window.editingGift && generatedTemplateName && window.walletUnlockedTemplateNames instanceof Set && window.walletUnlockedTemplateNames.has(generatedTemplateName)) {
           window.walletUnlockedTemplateNames.delete(generatedTemplateName);
           relockDetailPageIfOpen(generatedTemplateName);
           if (window.currentUserUid) {
@@ -10085,7 +10135,7 @@ var qrcode = function() {
         const q = query(collection(db, 'myGifts'), where('uid', '==', window.currentUserUid));
         const snap = await getDocs(q);
         rows = [];
-        snap.forEach(ds => rows.push(ds.data() || {}));
+        snap.forEach(ds => rows.push({ ...(ds.data() || {}), _id: ds.id }));
         rows.sort((a,b) => {
           const ta = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
           const tb = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
@@ -10101,6 +10151,11 @@ var qrcode = function() {
           const category = found ? found.item.category : 'Template';
           const time = d.createdAt && d.createdAt.toDate ? d.createdAt.toDate().toLocaleDateString() : '';
           const link = d.link || (found ? found.item.downloadUrl : '');
+          const cardId = d.cardId || ((d.link || '').split('?id=')[1] || '');
+          const created = d.createdAt && d.createdAt.toMillis ? d.createdAt.toMillis() : 0;
+          const hoursLeft = created ? Math.max(0, 24 - (Date.now() - created) / 3600000) : 0;
+          const canEdit = !!(found && cardId && hoursLeft > 0);
+          const editLabel = hoursLeft >= 1 ? Math.floor(hoursLeft) + 'h left' : Math.max(1, Math.ceil(hoursLeft * 60)) + 'm left';
           return `<div class="gift-card-new">
             <img class="gift-card-thumb" src="${escapeHtml(img)}" alt="" onerror="this.style.visibility='hidden'">
             <div class="gift-card-body">
@@ -10110,6 +10165,7 @@ var qrcode = function() {
               <div class="gift-card-actions">
                 ${link ? `<button class="primary" onclick="trackAndOpenGift(decodeURIComponent('${encodeURIComponent(link)}'))">Open</button>` : ''}
                 ${link ? `<button onclick="window.openQrForGiftLink(decodeURIComponent('${encodeURIComponent(link)}'))">QR</button>` : ''}
+                ${canEdit ? `<button class="edit-btn" onclick="editGift(decodeURIComponent('${encodeURIComponent(d.templateName)}'),'${cardId}')">✎ Edit · ${editLabel}</button>` : ''}
                 <button onclick="shareGiftLink(decodeURIComponent('${encodeURIComponent(link || '')}'),decodeURIComponent('${encodeURIComponent(d.templateName || 'Template')}'))">Share</button>
               </div>
             </div>
@@ -10122,6 +10178,56 @@ var qrcode = function() {
     // (rather than whatever is currently in the customize modal's link
     // field), by loading that link into the same hidden field the QR modal
     // already reads from.
+    // Edit an already-created gift (allowed for 24 hours after creation).
+    // Re-opens the customize form pre-filled with the saved data and, on
+    // save, updates the SAME card so the shared link stays unchanged.
+    window.editGift = async function (templateName, cardId) {
+      const found = findTemplateByName(templateName);
+      if (!found || !cardId) return;
+      try {
+        const snap = await getDoc(doc(db, 'cards', cardId));
+        if (!snap.exists()) { alert('This gift could not be found.'); return; }
+        const data = snap.data() || {};
+        try { closeSettings(); } catch (e) {}
+        window.editingGift = { cardId };
+        openCustomizeModal(found.item);
+        document.getElementById('customizeTitle').textContent = 'Edit: ' + found.item.name;
+        currentFields.forEach(field => {
+          const v = data[field.key];
+          if (v === undefined || v === null || v === '') return;
+          if (field.type === 'photos') {
+            const arr = Array.isArray(v) ? v : [v];
+            uploadedPhotosByKey[field.key] = {};
+            const grid = document.getElementById('multiPreview_' + field.key);
+            if (grid) grid.innerHTML = '';
+            arr.forEach((url, i) => {
+              uploadedPhotosByKey[field.key][i + 1] = url;
+              if (grid) {
+                const box = document.createElement('div');
+                box.className = 'upload-box small has-image multi-preview-item';
+                box.innerHTML = `<img src="${url}" alt=""><span class="multi-preview-number">${i + 1}</span>`;
+                grid.appendChild(box);
+              }
+            });
+            const ct = document.querySelector(`.multi-photo-picker[data-key="${field.key}"] .multi-photo-count`);
+            if (ct) ct.textContent = `${arr.length} / ${field.count}`;
+          } else if (field.type === 'cutout') {
+            const url = Array.isArray(v) ? v[0] : v;
+            uploadedPhotosByKey[field.key] = { 1: url };
+            const box = document.querySelector(`.upload-box[data-key="${field.key}"]`);
+            if (box) { box.classList.add('has-image'); box.insertAdjacentHTML('afterbegin', `<img src="${url}" alt="">`); }
+          } else if (field.type === 'video' || field.type === 'music') {
+            (field.type === 'video' ? uploadedVideosByKey : uploadedMusicByKey)[field.key] = v;
+            const hint = document.querySelector(`.upload-box[data-key="${field.key}"] .uploadHint`);
+            if (hint) hint.textContent = '✓ Already uploaded (tap to replace)';
+          } else {
+            const el = document.getElementById('field_' + field.key);
+            if (el) el.value = v;
+          }
+        });
+      } catch (e) { console.error(e); window.editingGift = null; alert('Could not open this gift for editing.'); }
+    };
+
     window.openQrForGiftLink = function (link) {
       if (!link) return;
       const input = document.getElementById('finalLinkInput');
@@ -10156,18 +10262,25 @@ var qrcode = function() {
           const img = found ? found.item.image : '';
           const category = found ? found.item.category : 'Template';
           const priceLabel = found && found.kind === 'free' ? 'Free' : (found && found.item.price ? found.item.price : '');
-          return `<div class="wish-card-new">
+          return `<div class="wish-card-new" style="cursor:pointer" onclick="openWishlistTemplate(decodeURIComponent('${encodeURIComponent(name)}'))">
             <img class="wish-card-thumb" src="${escapeHtml(img)}" alt="" onerror="this.style.visibility='hidden'">
             <div class="wish-card-body">
               <h5>${escapeHtml(name)}</h5>
               <span class="wish-card-tag">${escapeHtml(category)}</span>
             </div>
             ${priceLabel ? `<div class="wish-card-price">${escapeHtml(priceLabel)}</div>` : ''}
-            <button class="wish-card-heart" onclick="removeWishlistItem(decodeURIComponent('${encodeURIComponent(name)}'))" title="Remove from wishlist">♥</button>
+            <button class="wish-card-heart" onclick="event.stopPropagation();removeWishlistItem(decodeURIComponent('${encodeURIComponent(name)}'))" title="Remove from wishlist">♥</button>
           </div>`;
         }).join('');
       } catch (e) { list.innerHTML = '<div class="empty-note">Wishlist could not be loaded.</div>'; }
     }
+
+    window.openWishlistTemplate = function (name) {
+      const found = findTemplateByName(name);
+      if (!found) return;
+      try { closeSettings(); } catch (e) {}
+      setTimeout(() => openTemplateDetail(found.item, found.kind), 60);
+    };
 
     window.removeWishlistItem = async function (name) {
       if (!window.currentUserUid) return;
@@ -11211,8 +11324,9 @@ function confirmLogout() {
     // (e.g. Array.isArray(d.mainPhoto), d.memoryPhotos.map(...)).
     // Returns the new Firestore document's ID, used as the ?id= in the link.
     // ============================================================
-    async function saveCardData({ templateName, values, photoGroups }) {
-      const data = { ...(values || {}), templateName: templateName || '', createdAt: serverTimestamp() };
+    async function saveCardData({ templateName, values, photoGroups, editCardId }) {
+      const data = { ...(values || {}), templateName: templateName || '' };
+      if (!editCardId) data.createdAt = serverTimestamp();
 
       for (const key in (photoGroups || {})) {
         const slots = photoGroups[key] || {};
@@ -11225,6 +11339,11 @@ function confirmLogout() {
       const user = getCurrentUser();
       if (user) data.ownerUid = user.uid;
 
+      if (editCardId) {
+        data.updatedAt = serverTimestamp();
+        await setDoc(doc(db, 'cards', editCardId), data, { merge: true });
+        return editCardId;
+      }
       const docRef = await addDoc(collection(db, 'cards'), data);
       return docRef.id;
     }
